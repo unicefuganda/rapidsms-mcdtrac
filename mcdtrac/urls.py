@@ -10,7 +10,7 @@ urlpatterns = patterns('',
             url(r'^$', login_required(generic), {
               'model':Message,
               'queryset':get_messages,
-              'filter_forms':[FreeSearchTextForm, DistictFilterMessageForm, HandledByForm, FlaggedForm],
+              'filter_forms':[FreeSearchTextForm, DistictFilterMessageForm],
               'action_forms':[ReplyTextForm, FlagMessageForm],
               'objects_per_page':25,
               'partial_row':'contact/partials/message_row.html',
