@@ -1,5 +1,261 @@
 [
     {
+        "pk": 8, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of female children between 12-59 months", 
+            "created": "2012-05-21 16:30:26", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:30:26", 
+            "type": null, 
+            "slug": "deworming_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of Female Children <1 year", 
+            "created": "2012-05-21 16:19:16", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:19:44", 
+            "type": null, 
+            "slug": "dpt3_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of female children 6-59 months", 
+            "created": "2012-05-21 16:33:03", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:33:03", 
+            "type": null, 
+            "slug": "muac_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 16, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of female children <5 years", 
+            "created": "2012-05-21 16:43:03", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:43:03", 
+            "type": null, 
+            "slug": "birthreg_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 14, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of female children <1 year", 
+            "created": "2012-05-21 16:40:03", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:40:03", 
+            "type": null, 
+            "slug": "eid_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of female children 6-59 months", 
+            "created": "2012-05-21 16:27:33", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:27:33", 
+            "type": null, 
+            "slug": "vitaminA_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of female children <1 year", 
+            "created": "2012-05-21 16:24:32", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:24:32", 
+            "type": null, 
+            "slug": "measles_female", 
+            "name": "Female"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of male children 6-59 months", 
+            "created": "2012-05-21 16:32:38", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:32:38", 
+            "type": null, 
+            "slug": "muac_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of male children <1 year", 
+            "created": "2012-05-21 16:23:56", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:23:56", 
+            "type": null, 
+            "slug": "measles_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of male children 6-59 months", 
+            "created": "2012-05-21 16:26:42", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:27:03", 
+            "type": null, 
+            "slug": "vitaminA_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of male children between 12-59 months", 
+            "created": "2012-05-21 16:30:00", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:30:00", 
+            "type": null, 
+            "slug": "deworming_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of Male Children <1 year", 
+            "created": "2012-05-21 16:18:30", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:19:33", 
+            "type": null, 
+            "slug": "dpt3_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 13, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of male children < 1year", 
+            "created": "2012-05-21 16:39:39", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:40:14", 
+            "type": null, 
+            "slug": "eid_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 15, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of male children <5 years", 
+            "created": "2012-05-21 16:42:37", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:42:37", 
+            "type": null, 
+            "slug": "birthreg_male", 
+            "name": "Male"
+        }
+    }, 
+    {
+        "pk": 12, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of pregnant women", 
+            "created": "2012-05-21 16:38:02", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:38:02", 
+            "type": null, 
+            "slug": "anc4_number", 
+            "name": "Number"
+        }
+    }, 
+    {
+        "pk": 11, 
+        "model": "eav.attribute", 
+        "fields": {
+            "description": "Number of pregnant women", 
+            "created": "2012-05-21 16:36:40", 
+            "datatype": "int", 
+            "enum_group": null, 
+            "required": false, 
+            "site": 6, 
+            "modified": "2012-05-21 16:36:40", 
+            "type": null, 
+            "slug": "tetanus2_number", 
+            "name": "Number"
+        }
+    },
+    {
         "pk": 1, 
         "model": "rapidsms_xforms.xform", 
         "fields": {
