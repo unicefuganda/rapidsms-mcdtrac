@@ -1,6 +1,12 @@
 from django.db import models
 from rapidsms.models import Contact
-from healthmodels.models import HealthFacility
+from healthmodels.models.HealthFacility import HealthFacility
+from healthmodels.models.HealthProvider import HealthProvider
+from rapidsms_xforms.models import XForm, XFormSubmission
+from rapidsms_xforms.models import xform_received
+import datetime
+
+XFORMS = ['dpt3', 'muac', 'tetanus2', 'anc4', 'eid', 'birthreg', 'measles', 'vitaminA', 'deworming']
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
@@ -9,7 +15,7 @@ class PoW(models.Model):
     def __unicode__(self):
         return '%s' % self.name
     
-class Reporter(Contact):
+class Reporter(HealthProvider):
     sites_of_operation = models.ManyToManyField(PoW, through='ReporterPoW')
     
     def __unicode__(self):
@@ -18,4 +24,63 @@ class Reporter(Contact):
 class ReporterPoW(models.Model):
     reporter = models.ForeignKey(Reporter)
     pow = models.ForeignKey(PoW)
+
+
+def check_basic_validity(xform_type, submission, health_provider, day_range):
+    xform = XForm.objects.get(keyword=xform_type)
+    start_date = datetime.datetime.now() - datetime.timedelta(hours=(day_range * 24))
+    for s in XFormSubmission.objects.filter(connection__contact=health_provider,
+                                            xform=xform,
+                                            created__gte=start_date).exclude(pk=submission.pk):
+        s.has_errors = True
+        s.save()
+            
+def xform_received_handler(sender, **kwargs):
+    xform = kwargs['xform']
+    submission = kwargs['submission']
+
+    if submission.has_errors:
+        return
+
+    # TODO: check validity
+    kwargs.setdefault('message', None)
+    message = kwargs['message']
+    try:
+        message = message.db_message
+        if not message:
+            return
+    except AttributeError:
+        return
+
+    try:
+        health_provider = submission.connection.contact.healthproviderbase.healthprovider
+    except:
+        if xform.keyword in XFORMS:
+            submission.response = "Must be a reporter. Please register first before sending any information"
+            submission.has_errors = True
+            submission.save()
+        return
+
+    if xform.keyword in XFORMS:
+        check_basic_validity(xform.keyword, submission, health_provider, 1)
+
+        value_list = []
+        for v in submission.eav.get_values().order_by('attribute__xformfield__order'):
+            value_list.append("%s %d" % (v.attribute.name, v.value_int))
+        if len(value_list) > 1:
+            value_list[len(value_list) - 1] = " and %s" % value_list[len(value_list) - 1]
+        health_provider.last_reporting_date = datetime.datetime.now().date()
+        health_provider.save()
+        health_provider.facility.last_reporting_date = datetime.datetime.now().date()
+        health_provider.facility.save()
+        submission.response = "You reported %s.If there is an error,please resend." % ','.join(value_list)
+        submission.save()
+
+    if xform.keyword in XFORMS and \
+        not (submission.connection.contact and submission.connection.contact.active):
+        submission.has_errors = True
+        submission.save()
+        return
+    
+xform_received.connect(xform_received_handler, weak=True)
     

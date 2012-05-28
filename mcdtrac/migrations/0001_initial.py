@@ -18,7 +18,7 @@ class Migration(SchemaMigration):
 
         # Adding model 'Reporter'
         db.create_table('mcdtrac_reporter', (
-            ('contact_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['rapidsms.Contact'], unique=True, primary_key=True)),
+            ('healthprovider_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['healthmodels.HealthProvider'], unique=True, primary_key=True)),
         ))
         db.send_create_signal('mcdtrac', ['Reporter'])
 
@@ -108,9 +108,22 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'slug': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
         },
+        'healthmodels.healthprovider': {
+            'Meta': {'object_name': 'HealthProvider', '_ormbases': ['healthmodels.HealthProviderBase']},
+            'healthproviderbase_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['healthmodels.HealthProviderBase']", 'unique': 'True', 'primary_key': 'True'})
+        },
+        'healthmodels.healthproviderbase': {
+            'Meta': {'object_name': 'HealthProviderBase', '_ormbases': ['rapidsms.Contact']},
+            'contact_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['rapidsms.Contact']", 'unique': 'True', 'primary_key': 'True'}),
+            'facility': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['healthmodels.HealthFacility']", 'null': 'True'}),
+            'last_reporting_date': ('django.db.models.fields.DateField', [], {'null': 'True'}),
+            'location': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['locations.Location']", 'null': 'True'})
+        },
         'locations.location': {
             'Meta': {'object_name': 'Location'},
+            'code': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
@@ -140,8 +153,8 @@ class Migration(SchemaMigration):
             'served_by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['healthmodels.HealthFacility']"})
         },
         'mcdtrac.reporter': {
-            'Meta': {'object_name': 'Reporter', '_ormbases': ['rapidsms.Contact']},
-            'contact_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['rapidsms.Contact']", 'unique': 'True', 'primary_key': 'True'}),
+            'Meta': {'object_name': 'Reporter', '_ormbases': ['healthmodels.HealthProvider']},
+            'healthprovider_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['healthmodels.HealthProvider']", 'unique': 'True', 'primary_key': 'True'}),
             'sites_of_operation': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['mcdtrac.PoW']", 'through': "orm['mcdtrac.ReporterPoW']", 'symmetrical': 'False'})
         },
         'mcdtrac.reporterpow': {

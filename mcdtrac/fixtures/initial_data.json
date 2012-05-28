@@ -1,5 +1,31 @@
 [
     {
+        "pk": 6, 
+        "model": "sites.site", 
+        "fields": {
+            "domain": "mcdtrac.unicefuganda.org", 
+            "name": "MCDTrack"
+        }
+    },
+    {
+        "pk": 1, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "admin", 
+            "first_name": "", 
+            "last_name": "", 
+            "is_active": true, 
+            "is_superuser": true, 
+            "is_staff": true, 
+            "last_login": "2012-05-21 12:24:05", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "sha1$0a02f$7cdc17cfdeb41b7eed834c84530ae41132e40812", 
+            "email": "asseym@gmail.com", 
+            "date_joined": "2012-05-17 12:54:15"
+        }
+    },
+    {
         "pk": 8, 
         "model": "eav.attribute", 
         "fields": {

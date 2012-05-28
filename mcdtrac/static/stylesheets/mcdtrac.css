@@ -1,0 +1,181 @@
+table th  a {
+    color: #4bd;
+}
+
+div#map {
+    margin-top:40px;
+    width: 75%;
+    height: 400px;
+    border: 1px solid #1ebfd2;
+    float:left;
+}
+
+div#overlays {
+    margin-top:40px;
+    width: 20%;
+    height: 400px;
+    border: 1px solid #1ebfd2;
+    float: right;
+    margin-right: 20px;
+}
+div#overlays li{
+    border-bottom:1px solid #ffffff;
+    list-style:none;
+    background-color:#4bd;
+}
+
+div#overlays li a{
+    color:#000000;
+}
+.help{
+    color: #389ece;
+  font-weight: bold;
+  margin-bottom: 1em;
+}
+
+.ajax_loading{
+    background-image:url("../icons/ajax-loader.gif");
+    background-repeat:no-repeat;
+    background-position: center center;
+
+}
+
+div.breadcrumb{
+    border-bottom:1px solid #ccc;
+    padding:0 0 10px 10px;
+    text-transform:capitalize;
+}
+
+div.breadcrumb span{
+    font-weight:bold;
+}
+
+.results ul {
+    list-style-type:none;
+    margin:2px;
+    padding:0;
+}
+
+.results li {
+    padding:1px;
+    font-size:6pt;
+}
+
+div.buttons a img{
+    margin:0 3px -3px 0 !important;
+    padding:0;
+    border:none;
+    width:16px;
+    height:16px;
+}
+
+div.module {
+    margin-top: 1em;
+}
+
+#filters {
+    height: 5em;
+}
+
+#div_filter_0 {
+    position:absolute;
+    left:0;
+    top: 3em;
+}
+
+#div_filter_1 {
+    position:absolute;
+    left:33%;
+    top: 3em;
+}
+
+#div_filter_2 {
+    position:absolute;
+    left:66%;
+    top: 3em;
+}
+
+#div_filter_update {
+    float:right;
+    position:absolute;
+    right:0;
+    bottom: 0;
+}
+
+#div_filter_clear {
+    float:right;
+    position:absolute;
+    right: 0;
+    top: 3em;
+}
+
+#id_catchment_areas {
+    height:100px;
+    font-size:10px;	
+}
+
+#actions {
+    height:10em;
+}
+
+#id_name {
+    width:10em;	
+}
+
+#id_location {
+    width: 7em;
+}
+
+#id_roles {
+    width: 9em;
+    height: 7em;
+    font-size: 8pt;
+}
+
+#id_facility {
+    width: 7em;
+}
+
+#id_village_name {
+    width: 7em;	
+}
+
+#div_action_0 {
+    position:absolute;
+    top:3em;
+    left:0;
+    width:50%;
+}
+
+#div_action_1 {
+    position:absolute;
+    left: 50%;	
+    top:3em;
+}
+
+#div_action_0 a {
+    position:absolute;
+    top: 1em;
+    left: 25em;
+}
+
+#div_action_1 a {
+    position:absolute;  
+    top:1em;
+    width: 15em;
+}
+
+.ui-corner-all {
+    -webkit-border-radius: 5px;	
+}
+
+.ui-autocomplete {
+	list-style-type: none;
+	background-color:#CCF;
+	color: black;
+	z-index: 1;
+}
+
+.filter_form_help {
+    display:none;
+}
