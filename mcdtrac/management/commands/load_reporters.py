@@ -65,7 +65,7 @@ class Command(BaseCommand):
             district = find_closest_match(_district, Location.objects.filter(type='district'))
             roles = Group.objects.filter(name='Other Health Workers')
             role = Group.objects.get(name='Other Health Workers')
-            facility = find_closest_match(_fac, HealthFacility.objects.all())
+            facility = find_closest_match(_fac, HealthFacility.objects.all(), True)
             village = None
             if _village:
                 if district:
@@ -76,19 +76,10 @@ class Command(BaseCommand):
                 _name = ' '.join([n.capitalize() for n in _name.lower().split()])
             msisdn, backend = assign_backend(_phone)
             print msisdn
-
-            if _phone2:
-                msisdn2, backend2 = assign_backend(_phone2)
-
-            connection2 = None
             try:
                 connection = Connection.objects.get(identity=msisdn, backend=backend)
-                if _phone2:
-                    connection2 = Connection.objects.get(identity=msisdn2, backend=backend2)
             except Connection.DoesNotExist:
                 connection = Connection.objects.create(identity=msisdn, backend=backend)
-                if _phone2:
-                    connection2 = Connection.objects.create(identity=msisdn2, backend=backend2)
             except Connection.MultipleObjectsReturned:
                 connection = Connection.objects.filter(identity=msisdn, backend=backend)[0]
 
@@ -124,6 +115,11 @@ class Command(BaseCommand):
             for role in roles:
                 contact.groups.add(role)
 
-            if connection2:
+            if _phone2:
+                msisdn2, backend2 = assign_backend(_phone2)
+                try:
+                    connection2 = Connection.objects.get(identity=msisdn2, backend=backend2)
+                except Connection.DoesNotExist:
+                    connection2 = Connection.objects.create(identity=msisdn2, backend=backend2)
                 contact.connection_set.add(connection2)
             contact.save()
