@@ -70,9 +70,11 @@ class ReportsTest(TestCase): #pragma: no cover
         week = 7 * 86400
         self.elapseTime(XFormSubmission.objects.all()[0], week * 2)
         self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You reported Male 2, and Female 3.If there is an error,please resend.')
-        self.assertEquals(XFormSubmission.objects.all()[0].connection.contact.healthproviderbase.healthprovider.facility.location, self.mubende)
+        self.assertEquals(XFormSubmission.objects.all()[0].connection.contact.healthproviderbase.healthprovider.facility.location, self.mubende.point)
         
-        
+    def testBadMessage(self):
+        self.fake_incoming('bla bla')
+        self.assertEquals(Message.objects.order_by('-date')[0].text, 'We did not understand your message format, please reformat and send again!')
         
         
         
