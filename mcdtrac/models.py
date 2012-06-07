@@ -6,7 +6,7 @@ from rapidsms_xforms.models import XForm, XFormSubmission
 from rapidsms_xforms.models import xform_received
 import datetime
 
-XFORMS = ['dpt3', 'muac', 'tetanus2', 'anc4', 'eid', 'birthreg', 'measles', 'vitaminA', 'deworming']
+XFORMS = ['dpt', 'muac', 'tet', 'anc', 'eid', 'reg', 'me', 'vit', 'worm']
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
