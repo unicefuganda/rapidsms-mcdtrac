@@ -1,8 +1,11 @@
 import os
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.http import Http404
+from django.template import RequestContext
+from django.shortcuts import redirect, get_object_or_404, render_to_response
 from django.conf import settings
 from django.core.management import call_command
+from rapidsms_xforms.models import XForm
 
 def save_upload(uploaded, filename, raw_data):
     '''
@@ -68,3 +71,12 @@ def ajax_upload(request):
         import json
         ret_json = { 'success': success, }
         return HttpResponse(json.dumps(ret_json))
+    
+def mcdtrac_xforms(req):
+    mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'muac', 'tet', 'anc', 'eid', 'reg', 'me', 'vit', 'worm'])
+    xforms = XForm.on_site.filter(keyword__in=mcd_keywords)
+    breadcrumbs = (('XForms', ''),)
+    return render_to_response(
+        "xforms/form_index.html",
+        { 'xforms': xforms, 'breadcrumbs': breadcrumbs },
+        context_instance=RequestContext(req))

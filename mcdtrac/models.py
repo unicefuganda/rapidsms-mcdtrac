@@ -5,8 +5,9 @@ from healthmodels.models.HealthProvider import HealthProvider
 from rapidsms_xforms.models import XForm, XFormSubmission
 from rapidsms_xforms.models import xform_received
 import datetime
+from django.conf import settings
 
-XFORMS = ['dpt', 'muac', 'tet', 'anc', 'eid', 'reg', 'me', 'vit', 'worm']
+XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'redm', 'tet', 'anc', 'eid', 'breg', 'me', 'vita', 'worm'])
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
@@ -35,8 +36,10 @@ def check_basic_validity(xform_type, submission, health_provider, day_range):
         s.has_errors = True
         s.save()
             
-def xform_received_handler(sender, **kwargs):
+def mcd_xform_handler(sender, **kwargs):
     xform = kwargs['xform']
+    if not xform.keyword in XFORMS:
+        return
     submission = kwargs['submission']
 
     if submission.has_errors:
@@ -82,5 +85,5 @@ def xform_received_handler(sender, **kwargs):
         submission.save()
         return
     
-xform_received.connect(xform_received_handler, weak=True)
+xform_received.connect(mcd_xform_handler, weak=True)
     

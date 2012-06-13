@@ -60,4 +60,6 @@ urlpatterns = patterns('',
                        
     url(r'^ajax_upload/$', ajax_upload, name="ajax_upload"),
     
+    url(r'^mcdtrac/xforms/$', mcdtrac_xforms, name='mcd-xforms')
+    
 )
