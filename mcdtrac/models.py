@@ -59,7 +59,7 @@ def mcd_xform_handler(sender, **kwargs):
         health_provider = submission.connection.contact.healthproviderbase.healthprovider
     except:
         if xform.keyword in XFORMS:
-            submission.response = "Must be a reporter. Please register first before sending any information"
+            submission.response = "You must be a reporter for MCDs. Please register first before sending any information"
             submission.has_errors = True
             submission.save()
         return
