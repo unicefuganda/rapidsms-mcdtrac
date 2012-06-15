@@ -74,8 +74,11 @@ def mcd_xform_handler(sender, **kwargs):
             value_list[len(value_list) - 1] = " and %s" % value_list[len(value_list) - 1]
         health_provider.last_reporting_date = datetime.datetime.now().date()
         health_provider.save()
-        health_provider.facility.last_reporting_date = datetime.datetime.now().date()
-        health_provider.facility.save()
+        try:
+            health_provider.facility.last_reporting_date = datetime.datetime.now().date()
+            health_provider.facility.save()
+        except:
+            pass
         submission.response = "You reported %s.If there is an error,please resend." % ','.join(value_list)
         submission.save()
 
