@@ -1,0 +1,11 @@
+{% extends 'generic/partials/partial_header.html' %}
+{% block tablehead %}
+<tr>
+  <th class="center">Type</th>
+  <th>Date</th>
+  {% for field in fields.all %}
+  <th>{{ field.name }}</th>
+  {% endfor %}
+  <th></th>
+</tr>
+{% endblock %}
