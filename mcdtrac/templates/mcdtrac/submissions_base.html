@@ -3,7 +3,6 @@
     Submissions - {{ block.super }}
 {% endblock %}
 {% block stylesheets %}
-    {{ block.super }}
     <link type="text/css" rel="stylesheet" href="{{ MEDIA_URL }}mtrack/stylesheets/layout.css" />
     <link type="text/css" rel="stylesheet" href="{{ MEDIA_URL }}rapidsms/stylesheets/splits.css" />
     <link type="text/css" rel="stylesheet" href="{{ MEDIA_URL }}rapidsms/stylesheets/modules.css" />
@@ -19,12 +18,5 @@
     <script src="{{MEDIA_URL}}mcdtrac/javascripts/mcdtrac.js" type="text/javascript"></script>
 {% endblock %}
 {% block content %}
-<div class="buttons">
-  <a href="/xforms/{{ form.pk }}/submissions.csv">
-    <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/table_save.png" alt=""/> Export
-  </a>
-  <br/>
-</div>
 {{ block.super }}
 {% endblock %}
-

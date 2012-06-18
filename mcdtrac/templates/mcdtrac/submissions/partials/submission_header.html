@@ -1,4 +1,12 @@
 {% extends 'generic/partials/partial_header.html' %}
+{% block toprow %}
+<div class="buttons">
+  <a href="/xforms/{{ xform.pk }}/submissions.csv">
+    <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/table_save.png" alt=""/> Export
+  </a>
+  <br/>
+</div>
+{% endblock %}
 {% block tablehead %}
 <tr>
   <th class="center">Type</th>
