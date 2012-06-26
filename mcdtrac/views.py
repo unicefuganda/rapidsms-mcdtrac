@@ -85,23 +85,19 @@ def mcdtrac_xforms(req):
         { 'xforms': xforms, 'breadcrumbs': breadcrumbs },
         context_instance=RequestContext(req))
     
-def view_submissions(req, form_id=None):
-    
+def view_submissions(req):
+    if req.method == 'POST':
+        form_id = req.POST.get('form_id') if req.POST.get('form_id') else None
+    else:
+        form_id = None
+        
     xform = XForm.on_site.get(keyword = mcd_keywords[0]) if form_id == None\
          else XForm.on_site.get(pk=form_id)
           
     submissions = xform.submissions.all().order_by('-pk')
     fields = xform.fields.all().order_by('pk')
 
-    breadcrumbs = (('XForms', '/xforms/'), ('Submissions', ''))
-
-    current_page = 1
-    if 'page' in req.REQUEST:
-        current_page = int(req.REQUEST['page'])
-
-    paginator = Paginator(submissions, 25)
-    page = paginator.page(current_page)
-    
+#    breadcrumbs = (('XForms', '/xforms/'), ('Submissions', ''))
     return generic(
       request = req,
       model = XFormSubmission,
@@ -112,13 +108,13 @@ def view_submissions(req, form_id=None):
       partial_header = 'mcdtrac/submissions/partials/submission_header.html',
       base_template = 'mcdtrac/submissions_base.html',
 #      base_template = 'cvs/messages_base.html',
-      results_title = 'Submissions',
+      results_title = 'Submissions for %s' % xform.name,
       columns = [('Name', True, 'name', None)],
       sort_column = 'last_reporting_date',
       sort_ascending = False,
       fields = fields,
-#      breadcrumbs = breadcrumbs,
-      submissions = page,
+      selectable = False,
+      submissions = submissions,
       xform = xform,       
             )
 

@@ -3,5 +3,7 @@
  * @param xform - selected xform
  */
 function select_xform(xform){
-	$.get('/mcdtrac/' + xform.value + '/submissions/');
+	$.post('/mcdtrac/' + xform.value + '/submissions/', {'form_id':xform.value}, function(data) {
+		  $('#object_list').html(data)
+	});
 }

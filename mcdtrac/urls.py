@@ -13,6 +13,6 @@ from .sorters import LatestSubmissionSorter
 urlpatterns = patterns('',
     url(r'^mcdtrac/', login_required(view_submissions), name='mcds'),
     url(r'^mcdtrac/xforms/$', login_required(mcdtrac_xforms), name='mcd-xforms'),
-    url(r'^mcdtrac/(\d+)/submissions/$', login_required(view_submissions), name='mcd-submissions'),
+    url(r'^mcdtrac/(?P<form_id>\d+)/submissions/$', login_required(view_submissions), name='mcd-submissions'),
     
 )
