@@ -62,11 +62,23 @@ class MCDTests(TestCase): #pragma: no cover
     
     def testNonRegisteredReporter(self):
         self.fake_incoming('dpt.2.3', connection=Connection.objects.create(identity='12345', backend=self.backend))  
-        self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You must be a reporter for MCDs. Please register first before sending any information')
+        self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You must be a reporter for FHDs. Please register first before sending any information')
           
     def testBadMessage(self):
         self.fake_incoming('bla bla')
         self.assertEquals(Message.objects.order_by('-date')[0].text, 'Thank you for your message. We have forwarded to your DHT for follow-up. If this was meant to be a weekly report, please check and resend.')
+        
+    def testLeftOutParameter(self):
+        self.fake_incoming('dpt.2') 
+        self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You reported Male children 2.If there is an error,please resend.')
+        
+    def testFHDMuac(self):
+        self.fake_incoming('redm.2') 
+        self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You reported Number of children 2.If there is an error,please resend.')
+        
+    def testFuzzyMatchNumber(self):
+        self.fake_incoming('redm.I')
+        self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You reported Number of children 1.If there is an error,please resend.')
         
         
         
