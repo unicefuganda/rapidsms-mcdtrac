@@ -1,6 +1,7 @@
 import os
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.http import Http404
+from django.views.decorators.http import require_GET
 from django.template import RequestContext
 from django.shortcuts import redirect, get_object_or_404, render_to_response
 from django.conf import settings
@@ -122,3 +123,29 @@ def view_submissions(req):
 #                              dict(xform=xform, fields=fields, submissions=page, breadcrumbs=breadcrumbs,
 #                                   paginator=paginator, page=page),
 #                              context_instance=RequestContext(req))
+
+# CSV Export
+@require_GET
+def submissions_as_csv(req, pk=None):
+    import pdb
+    pdb.set_trace()
+    xforms = []
+    submissions = []
+    fields = []
+    if pk:
+        xforms.append(get_object_or_404(XForm, pk=pk))
+    else:
+        for kw in mcd_keywords:
+            xforms.append(XForm.objects.get(keyword=kw))
+
+    for xform in xforms:
+        submissions.append(xform.submissions.all().order_by('-pk'))
+        fields.append(xform.fields.all().order_by('pk'))
+
+    resp = render_to_response(
+        "mcdtrac/submissions.csv",
+        {'xforms': xforms, 'submissions': submissions, 'fields': fields},
+        mimetype="text/csv",
+        context_instance=RequestContext(req))
+    resp['Content-Disposition'] = 'attachment;filename="%s.csv"' % xform.keyword
+    return resp

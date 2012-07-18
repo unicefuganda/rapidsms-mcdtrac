@@ -1,15 +1,20 @@
 {% extends 'generic/partials/partial_header.html' %}
 {% block toprow %}
-<div class="buttons">
-  <a href="/xforms/{{ xform.pk }}/submissions.csv">
-    <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/table_save.png" alt=""/> Export
+<!--<div class="buttons">
+  <a href="{% url mcd-all-excel %}">
+    <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/table_save.png" alt=""/> Export All
+  </a>
+  <a href="{% url mcd-excel xform.pk %}">
+    <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/table_save.png" alt=""/> Export {{ xform }}
   </a>
   <br/>
-</div>
+</div>-->
 {% endblock %}
 {% block tablehead %}
 <tr>
   <th class="center">Type</th>
+  <th>Reporting Location</th>
+  <th>Health Facility</th>
   <th>Phone</th>
   <th>Date</th>
   {% for field in fields.all %}

@@ -1,5 +1,5 @@
 {% extends 'generic/partials/partial_row.html' %}
-{% load stats_extras %}
+{% load submission_tags %}
 {% block remaining_row_content %}
     <td class="center">
       {% ifequal object.type "odk-www" %}
@@ -9,6 +9,8 @@
       <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/phone.png" title="SMS object" >
       {% endifequal %}
     </td>
+    <td>{{ object.connection.identity|district }}</td>
+    <td>{{ object.connection.identity|hc }}</td>
     <td>{{ object.connection.identity }}</td>
     <td>
       {% if object.has_errors %}
