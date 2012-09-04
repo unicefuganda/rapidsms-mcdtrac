@@ -9,6 +9,7 @@ import datetime
 from django.conf import settings
 
 XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'redm', 'tet', 'anc', 'eid', 'breg', 'me', 'vita', 'worm'])
+REPORTS = getattr(settings, 'MCDTRAC_XFORM_REPORTS', ['033B'])
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
@@ -226,6 +227,23 @@ def fhd_summary_constraint(sender, **kwargs):
             scratch.xform_report.status = 'closed'
             scratch.active = False
 
+# set up the constraints
+for rep in REPORTS:
+    try:
+        xr = XFormReport.objects.get(name=rep)
+    except:
+        pass
+    else:
+        for cons in xr.constraints:
+            try:
+                constraint = eval(cons, {'__builtins__': None}, {
+                    'fhd_pow_constraint': fhd_pow_constraint,
+                    'fhd_summary_constraint': fhd_summary_constraint,
+                })
+            except NameError:
+                next
+            else:
+                xform_received.connect(constraint, weak=True)
 ##
 ## XFormReport general handler
 ##
