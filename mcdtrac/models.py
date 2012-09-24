@@ -168,6 +168,7 @@ def fhd_pow_constraint(sender, **kwargs):
         )
 
     report_submission = None
+    #TODO: can this be re-written as objects.get(eav.pow_name == ???)
     for r in XFormReportSubmission.objects.filter(
                                                     status='open',
                                                     submissions__xform__keyword='pow'
