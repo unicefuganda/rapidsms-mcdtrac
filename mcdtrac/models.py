@@ -168,15 +168,13 @@ def fhd_pow_constraint(sender, **kwargs):
         )
 
     report_submission = None
-    #TODO: can this be re-written as objects.get(eav.pow_name == ???)
-    for r in XFormReportSubmission.objects.filter(
-                                                    status='open',
-                                                    submissions__xform__keyword='pow'
-                                                ):
-        if pow.name == r.submission.eav.pow_name:
-            report_submission = r
-            break # stop at the first matching - in this case.
-    if report_submission is None:
+    try:
+        report_submission = XFormReportSubmission.objects.get(
+                                status='open',
+                                submissions__xform__keyword='pow',
+                                submissions__eav__pow_name=submission.eav.pow_name
+                            )
+    except XFormReportSubmission.DoesNotExist:
         report_submission = XFormReportSubmission.objects.create(
            report = rep_list.report,
            status = 'open',
