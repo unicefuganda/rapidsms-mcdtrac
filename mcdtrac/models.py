@@ -14,16 +14,16 @@ REPORTS = getattr(settings, 'MCDTRAC_XFORM_REPORTS', ['033B'])
 class PoW(models.Model):
     name = models.CharField(max_length=255)
     served_by = models.ForeignKey(HealthFacility)
-    
+
     def __unicode__(self):
         return '%s' % self.name
-    
+
 # class Reporter(HealthProvider):
 #     sites_of_operation = models.ManyToManyField(PoW, through='ReporterPoW')
-#     
+#
 #     def __unicode__(self):
 #         return '%s %s' % self.name, self.connection
-# 
+#
 # class ReporterPoW(models.Model):
 #     reporter = models.ForeignKey(Reporter)
 #     pow = models.ForeignKey(PoW)
@@ -31,12 +31,12 @@ class PoW(models.Model):
 class ReportsInProgress(models.Model):
     """
     Keep track of which reports are being submitted by who for which POW(s)
-    
+
     Since this information changes sporadically, this is just for the
-    handlers to know which XFormReportSubmission a given Reporter's 
+    handlers to know which XFormReportSubmission a given Reporter's
     XFormSubmissions belong to.
-    
-    The handler that "closes" reports for the HealthFacility should clean 
+
+    The handler that "closes" reports for the HealthFacility should clean
     out this table.
     """
     provider = models.ForeignKey(HealthProvider)
@@ -53,7 +53,7 @@ def check_basic_validity(xform_type, submission, health_provider, day_range):
                                             created__gte=start_date).exclude(pk=submission.pk):
         s.has_errors = True
         s.save()
-            
+
 def mcd_xform_handler(sender, **kwargs):
     xform = kwargs['xform']
     if not xform.keyword in XFORMS:
@@ -105,18 +105,18 @@ def mcd_xform_handler(sender, **kwargs):
         submission.has_errors = True
         submission.save()
         return
-    
+
 xform_received.connect(mcd_xform_handler, weak=True)
 
 def fhd_start_date():
     """
     returns the report date for this report.
-    
+
     for now i'll set it to the monday of the week when reports are comming in.
     """
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
-    
+
 ##
 ## XFormReport constraints.
 ##
@@ -125,11 +125,11 @@ def fhd_start_date():
 def fhd_pow_constraint(sender, **kwargs):
     """
     Each report is by place of worship. This constraint begins a new report.
-    
+
     this constraint is stored in XFormReport.constraints[] to be called bellow.
-    
+
     note that some other reporter may have already entered data for this POW.
-    
+
     we need to:
         1. check if there's any other report for this POW in progress
         2. Create a new report if 1 above is not true
@@ -139,15 +139,15 @@ def fhd_pow_constraint(sender, **kwargs):
     submission = kwargs['submission']
     if (not xform.keyword == 'pow') or submission.has_errors:
         return
-    
+
     try:
         health_provider = submission.connection.contact.healthproviderbase.healthprovider
     except:
-        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information" 
+        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information"
         submission.has_erros = True
         submission.save()
         return
-    
+
     #TODO: re-write to loop through all matching reports...
     try:
          rep_list = XFormList.objects.get(xform = xform)
@@ -166,7 +166,7 @@ def fhd_pow_constraint(sender, **kwargs):
                 name=submission.eav.pow_name,
                 served_by = health_provider.facility
         )
-        
+
     report_submission = None
     for r in XFormReportSubmission.objects.filter(
                                                     status='open',
@@ -182,7 +182,7 @@ def fhd_pow_constraint(sender, **kwargs):
            start_date = fhd_start_date())
         report_submission.submissions.add(submission)
         report_submission.save()
-    
+
     # update the xform-report-submissions being worked on if it exists,
     # create a new entry if it doesn't.
     try:
@@ -201,26 +201,26 @@ def fhd_pow_constraint(sender, **kwargs):
 def fhd_summary_constraint(sender, **kwargs):
     """
     handle summmary xform sent by in-charge
-    
+
     This constraint is stored in XFormReports.constraints[] (as the first item)
     and is used to signify the end of all reports from this health facility
     """
-    
+
     xform = kwargs['xform']
     submission = kwargs['submission']
     if (not xform.keyword == 'summary') or submission.has_errors:
         return
-    
+
     try:
         health_provider = submission.connection.contact.healthproviderbase.healthprovider
     except:
-        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information" 
+        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information"
         submission.has_erros = True
         submission.save()
         return
 
     # TODO: probably add basic checking for PINs.
-    
+
     # TODO: rewrite this as a models.F() single step...
     for pow in PoW.objects.filter(served_by=health_provider.facility):
         for scratch in ReportsInProgress.objects.filter(pow=pow, active=True):
@@ -256,7 +256,7 @@ def fhd_add_submission_handler(sender, **kwargs):
     """
     add a submission to an xform-report-submission
     """
-    
+
     xform = kwargs['xform']
     submission = kwargs['submission']
     if (not xform.keyword in XFORMS ) or submission.has_errors:
@@ -265,7 +265,7 @@ def fhd_add_submission_handler(sender, **kwargs):
     try:
         health_provider = submission.connection.contact.healthproviderbase.healthprovider
     except:
-        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information" 
+        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information"
         submission.has_erros = True
         submission.save()
         return
@@ -281,13 +281,13 @@ def fhd_add_submission_handler(sender, **kwargs):
         submission.has_errors = True
         submission.save()
         return
-           
+
     try:
         report = ReportsInProgress.objects.get(provider=health_provider, active=True)
     except ReportsInProgress.DoesNotExist:
         submission.response = "Tell me what POW you are reporting for before submitting data."
         return
-    
+
     # append to the report
     report.xform_report.submissions.add(submission)
     report.xform_report.save() # i may not need this
