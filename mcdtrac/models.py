@@ -8,8 +8,8 @@ from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
 
-XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'redm', 'tet', 'anc', 'eid', 'breg', 'vacm', 'vita', 'worm'])
-REPORTS = getattr(settings, 'MCDTRAC_XFORM_REPORTS', ['033B'])
+XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg'])
+REPORTS = getattr(settings, 'MCDTRAC_XFORM_REPORTS', ['FHD'])
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
