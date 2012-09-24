@@ -8,7 +8,7 @@ from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
 
-XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'redm', 'tet', 'anc', 'eid', 'breg', 'me', 'vita', 'worm'])
+XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'redm', 'tet', 'anc', 'eid', 'breg', 'vacm', 'vita', 'worm'])
 REPORTS = getattr(settings, 'MCDTRAC_XFORM_REPORTS', ['033B'])
 
 class PoW(models.Model):
@@ -236,7 +236,12 @@ for rep in REPORTS:
     else:
         for cons in xr.constraints:
             try:
+                # limit the objects available in the eval'ed scope
                 constraint = eval(cons, {'__builtins__': None}, {
+                    'XFormList': XFormList,
+                    'PoW': PoW,
+                    'XFormReportSubmission': XFormReportSubmission,
+                    'ReportsInProgress': ReportsInProgress,
                     'fhd_pow_constraint': fhd_pow_constraint,
                     'fhd_summary_constraint': fhd_summary_constraint,
                 })
