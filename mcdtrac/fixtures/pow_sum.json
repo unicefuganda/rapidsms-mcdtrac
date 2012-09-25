@@ -1,0 +1,117 @@
+[
+    {
+        "pk": 70,
+        "model": "rapidsms_xforms.xform",
+        "fields": {
+            "name": "FHD POW",
+            "keyword": "pow",
+            "created": "2012-08-31 05:38:33",
+            "restrict_message": "",
+            "modified": "2012-09-25 03:46:05",
+            "site": 1,
+            "owner": 1,
+            "separator": ",;:*.\\\\s",
+            "restrict_to": [],
+            "active": true,
+            "command_prefix": "+",
+            "response": "Your FHD POW has been set. Please send the data for this POW.",
+            "keyword_prefix": null,
+            "description": "FHD Place of Worship"
+        }
+    },
+    {
+        "pk": 71,
+        "model": "rapidsms_xforms.xform",
+        "fields": {
+            "name": "FHD Summary",
+            "keyword": "sum",
+            "created": "2012-08-31 05:41:04",
+            "restrict_message": "",
+            "modified": "2012-09-25 03:45:54",
+            "site": 1,
+            "owner": 1,
+            "separator": ",;:*.\\\\s",
+            "restrict_to": [],
+            "active": true,
+            "command_prefix": "+",
+            "response": "The reports for your health facility are being processed.",
+            "keyword_prefix": null,
+            "description": "FHD Summary from Health Facility in-charge"
+        }
+    },
+    {
+        "pk": 72,
+        "model": "rapidsms_xforms.xform",
+        "fields": {
+            "name": "FHD Summary (deprecated)",
+            "keyword": "summary",
+            "created": "2012-09-25 03:49:02",
+            "restrict_message": "",
+            "modified": "2012-09-25 03:49:02",
+            "site": 1,
+            "owner": 1,
+            "separator": ",;:*.\\\\s",
+            "restrict_to": [],
+            "active": true,
+            "command_prefix": "+",
+            "response": "Use 'sum\" next time. The reports for your health facility are being processed.",
+            "keyword_prefix": null,
+            "description": "Summary Keyword sent by health facility incharge (deprecated in favour of sum)"
+        }
+    },
+    {
+        "pk": 418,
+        "model": "rapidsms_xforms.xformfield",
+        "fields": {
+            "field_type": "int",
+            "question": "",
+            "command": "tot",
+            "order": 1,
+            "xform": 71
+        }
+    },
+    {
+        "pk": 421,
+        "model": "rapidsms_xforms.xformfield",
+        "fields": {
+            "field_type": "int",
+            "question": "",
+            "command": "tot",
+            "order": 1,
+            "xform": 72
+        }
+    },
+    {
+        "pk": 416,
+        "model": "rapidsms_xforms.xformfield",
+        "fields": {
+            "field_type": "text",
+            "question": "",
+            "command": "name",
+            "order": 0,
+            "xform": 70
+        }
+    },
+    {
+        "pk": 417,
+        "model": "rapidsms_xforms.xformfield",
+        "fields": {
+            "field_type": "int",
+            "question": "",
+            "command": "exp",
+            "order": 0,
+            "xform": 71
+        }
+    },
+    {
+        "pk": 420,
+        "model": "rapidsms_xforms.xformfield",
+        "fields": {
+            "field_type": "int",
+            "question": "",
+            "command": "exp",
+            "order": 0,
+            "xform": 72
+        }
+    }
+]
