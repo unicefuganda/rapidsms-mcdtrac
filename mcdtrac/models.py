@@ -207,7 +207,7 @@ def fhd_summary_constraint(sender, **kwargs):
 
     xform = kwargs['xform']
     submission = kwargs['submission']
-    if (not xform.keyword == 'summary') or submission.has_errors:
+    if (not xform.keyword in ['sum', 'summary']) or submission.has_errors:
         return
 
     try:
