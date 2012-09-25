@@ -180,8 +180,14 @@ def fhd_pow_constraint(sender, **kwargs):
            report = rep_list.report,
            status = 'open',
            start_date = fhd_start_date())
-        report_submission.submissions.add(submission)
-        report_submission.save()
+        submission.response = "New POW FHD report created. Please send the data."
+        submission.save()
+    else:
+        submission.response = "Adding to existing POW FHD report."
+        submission.save()
+
+    report_submission.submissions.add(submission)
+    report_submission.save()
 
     # update the xform-report-submissions being worked on if it exists,
     # create a new entry if it doesn't.
@@ -197,6 +203,7 @@ def fhd_pow_constraint(sender, **kwargs):
     else:
         scratch.pow = pow
         scratch.xform_report = report_submission
+
 
 def fhd_summary_constraint(sender, **kwargs):
     """
@@ -226,6 +233,7 @@ def fhd_summary_constraint(sender, **kwargs):
         for scratch in ReportsInProgress.objects.filter(pow=pow, active=True):
             scratch.xform_report.status = 'closed'
             scratch.active = False
+    submission.response = "All facility reports have been marked as closed.".format(health_provider.facility)
 
 # set up the constraints
 for rep in REPORTS:

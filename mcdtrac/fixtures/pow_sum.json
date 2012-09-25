@@ -1,4 +1,7 @@
 [
+    /*
+    XForms
+    */
     {
         "pk": 70,
         "model": "rapidsms_xforms.xform",
@@ -59,6 +62,9 @@
             "description": "Summary Keyword sent by health facility incharge (deprecated in favour of sum)"
         }
     },
+    /*
+    XFormFields
+    */
     {
         "pk": 418,
         "model": "rapidsms_xforms.xformfield",
