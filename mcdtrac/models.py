@@ -150,10 +150,10 @@ def fhd_pow_constraint(sender, **kwargs):
 
     #TODO: re-write to loop through all matching reports...
     try:
-         rep_list = XFormList.objects.get(xform = xform)
+        rep_list = XFormList.objects.get(xform = xform)
     except XFormList.MultipleObjectsReturned:
         # you could decide to just loop through each matching form ...
-         rep_list = XFormList.objects.filter(xform = xform)[0]
+        rep_list = XFormList.objects.filter(xform = xform)[0]
     except XFormList.DoesNotExist:
         submission.response = "This submission has not been added to any FHD report."
         submission.has_errors = True
@@ -171,6 +171,7 @@ def fhd_pow_constraint(sender, **kwargs):
     try:
         report_submission = XFormReportSubmission.objects.get(
                                 status='open',
+                                report=rep_list.report,
                                 submissions__xform__keyword='pow',
                                 submissions__eav__pow_name=submission.eav.pow_name
                             )
@@ -258,7 +259,7 @@ def fhd_add_submission_handler(sender, **kwargs):
 
     xform = kwargs['xform']
     submission = kwargs['submission']
-    if (not xform.keyword in XFORMS ) or submission.has_errors:
+    if (not xform.keyword in XFORMS) or submission.has_errors:
         return
 
     try:
@@ -270,16 +271,16 @@ def fhd_add_submission_handler(sender, **kwargs):
         return
 
     # reports may be more than one
-    try:
-         rep_list = XFormList.objects.get(xform = xform)
-    except XFormList.MultipleObjectsReturned:
-        # you could decide to just loop through each matching form ...
-         rep_list = XFormList.objects.filter(xform = xform)[0]
-    except XFormList.DoesNotExist:
-        submission.response = "This submission has not been added to any FHD report."
-        submission.has_errors = True
-        submission.save()
-        return
+    # try:
+    #     rep_list = XFormList.objects.get(xform = xform)
+    # except XFormList.MultipleObjectsReturned:
+    #     # you could decide to just loop through each matching form ...
+    #     rep_list = XFormList.objects.filter(xform = xform)[0]
+    # except XFormList.DoesNotExist:
+    #     submission.response = "This submission has not been added to any FHD report."
+    #     submission.has_errors = True
+    #     submission.save()
+    #     return
 
     try:
         report = ReportsInProgress.objects.get(provider=health_provider, active=True)
@@ -289,6 +290,6 @@ def fhd_add_submission_handler(sender, **kwargs):
 
     # append to the report
     report.xform_report.submissions.add(submission)
-    report.xform_report.save() # i may not need this
+    report.xform_report.save()  # i may not need this
 
 xform_received.connect(fhd_add_submission_handler, weak=True)

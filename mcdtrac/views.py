@@ -51,7 +51,7 @@ def ajax_upload(request):
             is_raw = True
             # AJAX Upload will pass the filename in the querystring if it is the "advanced" ajax upload
             try:
-                filename = request.GET[ 'qqfile' ]
+                filename = request.GET['qqfile']
             except KeyError:
                 return HttpResponseBadRequest("AJAX request not valid")
         # not an ajax upload, so it was the "basic" iframe version with submission via form
@@ -77,7 +77,7 @@ def ajax_upload(request):
         import json
         ret_json = { 'success': success, }
         return HttpResponse(json.dumps(ret_json))
-    
+
 def mcdtrac_xforms(req):
     xforms = XForm.on_site.filter(keyword__in=mcd_keywords)
     breadcrumbs = (('XForms', ''),)
@@ -85,16 +85,16 @@ def mcdtrac_xforms(req):
         "xforms/form_index.html",
         { 'xforms': xforms, 'breadcrumbs': breadcrumbs },
         context_instance=RequestContext(req))
-    
+
 def view_submissions(req):
     if req.method == 'POST':
         form_id = req.POST.get('form_id') if req.POST.get('form_id') else None
     else:
         form_id = None
-        
+
     xform = XForm.on_site.get(keyword = mcd_keywords[0]) if form_id == None\
          else XForm.on_site.get(pk=form_id)
-          
+
     submissions = xform.submissions.all().order_by('-pk')
     fields = xform.fields.all().order_by('pk')
 
@@ -103,7 +103,7 @@ def view_submissions(req):
       request = req,
       model = XFormSubmission,
       queryset = submissions,
-      filter_forms = [XFormsForm], #, FacilityFilterForm,
+      filter_forms = [XFormsForm],  # , FacilityFilterForm,
       objects_per_page = 25,
       partial_row = 'mcdtrac/submissions/partials/submission_row.html',
       partial_header = 'mcdtrac/submissions/partials/submission_header.html',
@@ -116,7 +116,7 @@ def view_submissions(req):
       fields = fields,
       selectable = False,
       submissions = submissions,
-      xform = xform,       
+      xform = xform,
             )
 
 #    return render_to_response("mcdtrac/submissions.html",
