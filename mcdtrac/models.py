@@ -120,7 +120,6 @@ def fhd_start_date():
 ##
 ## XFormReport constraints.
 ##
-# TODO: code to pop these from the XFormReport
 
 def fhd_pow_constraint(sender, **kwargs):
     """
@@ -155,7 +154,7 @@ def fhd_pow_constraint(sender, **kwargs):
         # you could decide to just loop through each matching form ...
         rep_list = XFormList.objects.filter(xform = xform)[0]
     except XFormList.DoesNotExist:
-        submission.response = "This submission has not been added to any FHD report."
+        submission.response = "This submission has not been added to any FHD report. Please try again."
         submission.has_errors = True
         submission.save()
         return
@@ -163,24 +162,22 @@ def fhd_pow_constraint(sender, **kwargs):
         place_of_worship = PoW.objects.get(name=submission.eav.pow_name, served_by=health_provider.facility)
     except PoW.DoesNotExist:
         place_of_worship = PoW.objects.create(
-                name=submission.eav.pow_name,
-                served_by = health_provider.facility
+                                name=submission.eav.pow_name,
+                                served_by=health_provider.facility
         )
 
-    report_submission = None
-    #TODO: can this be re-written as objects.get(eav.pow_name == ???)
-    for r in XFormReportSubmission.objects.filter(
-                                                    status='open',
-                                                    submissions__xform__keyword='pow'
-                                                ):
-        if place_of_worship.name == r.submission.eav.pow_name:
-            report_submission = r
-            break # stop at the first matching - in this case.
-    if report_submission is None:
+    try:
+        report_submission = XFormReportSubmission.objects.get( 
+                                status='open', 
+                                submissions__xform__keyword='pow',
+                                submissions__eav_values__value_text=place_of_worship.name
+        )
+    except XFormReportSubmission.DoesNotExist:
         report_submission = XFormReportSubmission.objects.create(
-           report = rep_list.report,
-           status = 'open',
-           start_date = fhd_start_date())
+                                report=rep_list.report,
+                                status='open',
+                                start_date=fhd_start_date()
+        )
         submission.response = "New POW FHD report created. Please send the data."
         submission.save()
     else:
@@ -189,21 +186,26 @@ def fhd_pow_constraint(sender, **kwargs):
 
     report_submission.submissions.add(submission)
     report_submission.save()
-
-    # update the xform-report-submissions being worked on if it exists,
-    # create a new entry if it doesn't.
+    
+    """
+     update the xform-report-submissions being worked on if it exists,
+     create a new entry if it doesn't.
+     ReportsInProgress.MultipleObjectsReturned should NOT happen as that'd be a bug.
+    """
     try:
         scratch = ReportsInProgress.objects.get(provider = health_provider, active=True)
     except ReportsInProgress.DoesNotExist:
-        scratch = ReportsInProgress.create(
-            provider = health_provider,
-            place_of_worship = place_of_worship,
-            xform_report = report_submission,
-            active = True
+        scratch = ReportsInProgress(
+            provider=health_provider,
+            place_of_worship=place_of_worship,
+            xform_report=report_submission,
+            active=True
         )
     else:
         scratch.place_of_worship = place_of_worship
         scratch.xform_report = report_submission
+        
+    scratch.save()
 
 
 def fhd_summary_constraint(sender, **kwargs):
@@ -234,14 +236,16 @@ def fhd_summary_constraint(sender, **kwargs):
         for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, active=True):
             scratch.xform_report.status = 'closed'
             scratch.active = False
-    submission.response = "All facility reports have been marked as closed.".format(health_provider.facility)
+            scratch.save()
+    submission.response = "All facility reports have been marked as closed."
+    submission.save()
 
 # set up the constraints
 for rep in REPORTS:
     try:
         xr = XFormReport.objects.get(name=rep)
     except:
-        pass
+        raise
     else:
         for cons in xr.constraints:
             try:
@@ -257,13 +261,20 @@ for rep in REPORTS:
             except NameError:
                 next
             else:
-                xform_received.connect(constraint, weak=True)
+                xform_received.connect(constraint, weak=False)
 ##
 ## XFormReport general handler
 ##
 def fhd_add_submission_handler(sender, **kwargs):
     """
     add a submission to an xform-report-submission
+    
+    a particular healthprovider aka reporter will be 
+    reporting for only a single POW at once 
+    (so only one entry for ReportsInProgress should exist)
+    
+    if that for some reason fails the 2nd try: will raise 
+    ReportsInProgress.MultipleObjectsReturned
     """
 
     xform = kwargs['xform']
@@ -278,27 +289,17 @@ def fhd_add_submission_handler(sender, **kwargs):
         submission.has_erros = True
         submission.save()
         return
-
-    # reports may be more than one
-    # try:
-    #     rep_list = XFormList.objects.get(xform = xform)
-    # except XFormList.MultipleObjectsReturned:
-    #     # you could decide to just loop through each matching form ...
-    #     rep_list = XFormList.objects.filter(xform = xform)[0]
-    # except XFormList.DoesNotExist:
-    #     submission.response = "This submission has not been added to any FHD report."
-    #     submission.has_errors = True
-    #     submission.save()
-    #     return
-
+    
     try:
         report = ReportsInProgress.objects.get(provider=health_provider, active=True)
     except ReportsInProgress.DoesNotExist:
         submission.response = "Tell me what POW you are reporting for before submitting data."
+        submission.has_errors = True
+        submission.save()
         return
 
     # append to the report
     report.xform_report.submissions.add(submission)
     report.xform_report.save()  # i may not need this
 
-xform_received.connect(fhd_add_submission_handler, weak=True)
+xform_received.connect(fhd_add_submission_handler, weak=False)
