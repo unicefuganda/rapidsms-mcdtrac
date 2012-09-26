@@ -1,18 +1,31 @@
 # -*- coding: utf-8 -*-
 import datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
 
-class Migration(DataMigration):
+
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        "Create initial XFormReport and XFormReportList for mcds"
-        from django.core.management import call_command
-        call_command("loaddata", "xform_reports.json")
+        # Deleting field 'ReportsInProgress.pow'
+        db.delete_column('mcdtrac_reportsinprogress', 'pow_id')
+
+        # Adding field 'ReportsInProgress.place_of_worship'
+        db.add_column('mcdtrac_reportsinprogress', 'place_of_worship',
+                      self.gf('django.db.models.fields.related.ForeignKey')(default=0, to=orm['mcdtrac.PoW']),
+                      keep_default=False)
+
 
     def backwards(self, orm):
-        "No real way to reverse this unfortunately ... "
+        # Adding field 'ReportsInProgress.pow'
+        db.add_column('mcdtrac_reportsinprogress', 'pow',
+                      self.gf('django.db.models.fields.related.ForeignKey')(default=0, to=orm['mcdtrac.PoW']),
+                      keep_default=False)
+
+        # Deleting field 'ReportsInProgress.place_of_worship'
+        db.delete_column('mcdtrac_reportsinprogress', 'place_of_worship_id')
+
 
     models = {
         'auth.group': {
@@ -236,7 +249,7 @@ class Migration(DataMigration):
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'pow': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mcdtrac.PoW']"}),
+            'place_of_worship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mcdtrac.PoW']"}),
             'provider': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['healthmodels.HealthProvider']"}),
             'xform_report': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rapidsms_xforms.XFormReportSubmission']"})
         },
@@ -356,4 +369,3 @@ class Migration(DataMigration):
     }
 
     complete_apps = ['mcdtrac']
-    symmetrical = True
