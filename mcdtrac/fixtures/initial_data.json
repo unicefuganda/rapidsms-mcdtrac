@@ -802,7 +802,7 @@
 			"keyword_prefix": null,
 			"description": "FHD Place of Worship"
 		}
-	},, {
+	}, {
 		"pk": 416,
 		"model": "rapidsms_xforms.xformfield",
 		"fields": {
