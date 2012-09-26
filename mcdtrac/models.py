@@ -26,7 +26,7 @@ class PoW(models.Model):
 #
 # class ReporterPoW(models.Model):
 #     reporter = models.ForeignKey(Reporter)
-#     pow = models.ForeignKey(PoW)
+#     place_of_worship = models.ForeignKey(PoW)
 
 class ReportsInProgress(models.Model):
     """
@@ -40,7 +40,7 @@ class ReportsInProgress(models.Model):
     out this table.
     """
     provider = models.ForeignKey(HealthProvider)
-    pow = models.ForeignKey(PoW)
+    place_of_worship = models.ForeignKey(PoW)
     xform_report = models.ForeignKey(XFormReportSubmission)
     modified = models.DateTimeField('Modified On', auto_now=True)
     active = models.BooleanField(default=False)
@@ -160,22 +160,23 @@ def fhd_pow_constraint(sender, **kwargs):
         submission.save()
         return
     try:
-        pow = PoW.objects.get(name=submission.eav.pow_name, served_by=health_provider.facility)
+        place_of_worship = PoW.objects.get(name=submission.eav.pow_name, served_by=health_provider.facility)
     except PoW.DoesNotExist:
-        pow = PoW.objects.create(
+        place_of_worship = PoW.objects.create(
                 name=submission.eav.pow_name,
                 served_by = health_provider.facility
         )
 
     report_submission = None
-    try:
-        report_submission = XFormReportSubmission.objects.get(
-                                status='open',
-                                report=rep_list.report,
-                                submissions__xform__keyword='pow',
-                                submissions__eav__pow_name=submission.eav.pow_name
-                            )
-    except XFormReportSubmission.DoesNotExist:
+    #TODO: can this be re-written as objects.get(eav.pow_name == ???)
+    for r in XFormReportSubmission.objects.filter(
+                                                    status='open',
+                                                    submissions__xform__keyword='pow'
+                                                ):
+        if place_of_worship.name == r.submission.eav.pow_name:
+            report_submission = r
+            break # stop at the first matching - in this case.
+    if report_submission is None:
         report_submission = XFormReportSubmission.objects.create(
            report = rep_list.report,
            status = 'open',
@@ -196,12 +197,12 @@ def fhd_pow_constraint(sender, **kwargs):
     except ReportsInProgress.DoesNotExist:
         scratch = ReportsInProgress.create(
             provider = health_provider,
-            pow = pow,
+            place_of_worship = place_of_worship,
             xform_report = report_submission,
             active = True
         )
     else:
-        scratch.pow = pow
+        scratch.place_of_worship = place_of_worship
         scratch.xform_report = report_submission
 
 
@@ -229,8 +230,8 @@ def fhd_summary_constraint(sender, **kwargs):
     # TODO: probably add basic checking for PINs.
 
     # TODO: rewrite this as a models.F() single step...
-    for pow in PoW.objects.filter(served_by=health_provider.facility):
-        for scratch in ReportsInProgress.objects.filter(pow=pow, active=True):
+    for place_of_worship in PoW.objects.filter(served_by=health_provider.facility):
+        for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, active=True):
             scratch.xform_report.status = 'closed'
             scratch.active = False
     submission.response = "All facility reports have been marked as closed.".format(health_provider.facility)
