@@ -22,7 +22,7 @@ from mtrack.loader import mtrack_init_demo
 
 
 class MCDTests(TestCase): #pragma: no cover
-
+    fixtures = ["xform_reports.json", "pow_sum.json"]
     def fake_incoming(self, message, connection=None):
         if connection is None:
             connection = self.connection
