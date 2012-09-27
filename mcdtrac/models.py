@@ -225,7 +225,7 @@ def fhd_summary_constraint(sender, **kwargs):
         health_provider = submission.connection.contact.healthproviderbase.healthprovider
     except:
         submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information"
-        submission.has_erros = True
+        submission.has_errors = True
         submission.save()
         return
 
