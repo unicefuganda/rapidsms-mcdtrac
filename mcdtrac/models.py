@@ -106,8 +106,6 @@ def mcd_xform_handler(sender, **kwargs):
         submission.save()
         return
 
-xform_received.connect(mcd_xform_handler, weak=True)
-
 def fhd_start_date():
     """
     returns the report date for this report.
@@ -302,4 +300,5 @@ def fhd_add_submission_handler(sender, **kwargs):
     report.xform_report.submissions.add(submission)
     report.xform_report.save()  # i may not need this
 
+xform_received.connect(mcd_xform_handler, weak=True)
 xform_received.connect(fhd_add_submission_handler, weak=False)

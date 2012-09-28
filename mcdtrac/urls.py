@@ -12,7 +12,7 @@ from .sorters import LatestSubmissionSorter
 from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
-    url(r'^mcdtrac/', mcd_dashboard, name='mcds'),
+    url(r'^mcdtrac/', login_required(mcd_dashboard), name='mcds'),
     url(r'^mcdtrac/dhts/$', direct_to_template, {'template': 'stats.html'} ),
 #    url(r'^mcdtrac/', login_required(view_submissions), name='mcds'),
     url(r'^mcdtrac/xforms/$', login_required(mcdtrac_xforms), name='mcd-xforms'),
