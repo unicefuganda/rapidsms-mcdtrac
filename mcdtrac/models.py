@@ -42,14 +42,18 @@ class ReportsInProgress(models.Model):
     place_of_worship = models.ForeignKey(PoW)
     xform_report = models.ForeignKey(XFormReportSubmission)
     modified = models.DateTimeField('Modified On', auto_now=True)
-    active = models.BooleanField(default=False)
+    state = models.CharField(max_length=255, null=True, blank=True)
 
-def check_basic_validity(xform_type, submission, health_provider, day_range):
-    xform = XForm.objects.get(keyword=xform_type)
+def check_basic_validity(xform_type, submission, health_provider, day_range, report_in_progress):
+    if xform_type in ['sum', 'summary', 'pow']: # these are just markers
+        return
+    xform = XForm.objects.get(keyword=xform_type) # any reason for not just passing the xform to this function?
     start_date = datetime.datetime.now() - datetime.timedelta(hours=(day_range * 24))
-    for s in XFormSubmission.objects.filter(connection__contact=health_provider,
+    for s in XFormSubmission.objects.filter(connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility,
                                             xform=xform,
-                                            created__gte=start_date).exclude(pk=submission.pk):
+                                            created__gte=start_date,
+                                            xformreportsubmission__pk=report_in_progress.xform_report.pk
+                                            ).exclude(pk=submission.pk):
         s.has_errors = True
         s.save()
 
@@ -77,7 +81,7 @@ def fhd_pow_constraint(xform, submission, health_provider):
 
     we need to:
         1. check if there's any other report for this POW in progress
-        2. Create a new report if 1 above is not true
+        2. Create a new report_submission if 1 above is not true
         3. Save the report found by 1 or 2 in our scratch table.
     """
     if (xform.keyword != 'pow') or submission.has_errors:
@@ -88,24 +92,40 @@ def fhd_pow_constraint(xform, submission, health_provider):
                                                  served_by=health_provider.facility)
 
     ## look for any report_submissions open for this pow by this health center (there should be at most one)
-    report_submission, new_rs = XFormReportSubmission.objects.get_or_create(
+    rs = XFormReportSubmission.objects.filter(
                                 status='open',
                                 submissions__xform__keyword='pow',
                                 submissions__eav_values__value_text=place_of_worship.name,
-                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility,
-                                defaults={'report': xform_report,
-                                          'start_date': fhd_start_date()})
-
+                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility                                
+                            ).distinct(XFormReportSubmission.pk)
+    if rs.count() == 0:
+        report_submission = XFormReportSubmission.objects.create(
+                                status='open',
+                                report=xform_report,
+                                start_date=fhd_start_date())
+    elif rs.count() == 1:
+        report_submission = rs[0]
+    else:
+        raise RuntimeError('Found more XFormReportSubmission objects than we expected: {0}'.format(rs.count()))
+    
     report_in_progress, new_rip = ReportsInProgress.objects.get_or_create(
                                 provider=health_provider,
-                                active=True,
+                                state__endswith='editing', #allows us to swap btn the current and paused
+                                place_of_worship=place_of_worship,
                                 defaults={'xform_report': report_submission,
-                                          'place_of_worship': place_of_worship})
+                                          'state': 'actively_editing'})
 
     ## update report_in_progress with what we know
-    if not new_rip:
-        report_in_progress.xform_report=report_submission
-        report_in_progress.place_of_worship=place_of_worship
+    if new_rip:
+        for old_rip in ReportsInProgress.objects.filter(
+                                provider=health_provider,
+                                state='actively_editing').exclude(pk=report_in_progress.pk):
+            old_rip.state='paused_editing'
+            old_rip.save()
+    else:
+        report_in_progress.xform_report=report_submission # shouldn't need this
+        report_in_progress.state='actively_editing'
+        report_in_progress.place_of_worship=place_of_worship #shouldn't need this
         report_in_progress.save()
 
     submission.response = 'You can now send reports for the POW: "{0}"'.format(place_of_worship.name)
@@ -131,10 +151,10 @@ def fhd_summary_constraint(xform, submission, health_provider):
 
     # TODO: rewrite this as a models.F() single step...
     for place_of_worship in PoW.objects.filter(served_by=health_provider.facility):
-        for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, active=True):
+        for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, state__endswith='editing'):
             scratch.xform_report.status = 'closed'
             scratch.xform_report.save()
-            scratch.active = False
+            scratch.state = 'closed'
             scratch.save()
     submission.response = "All POW reports for facility {0} have been marked as closed.".format(health_provider.facility)
     submission.save()
@@ -174,7 +194,7 @@ def fhd_xform_handler(sender, **kwargs):
     ## 1.0 -> check if there's an open report (pow was sent before)
     if not xform.keyword in ['pow', 'sum', 'summary']:
         try:
-            report_in_progress = ReportsInProgress.objects.get(provider=health_provider, active=True)
+            report_in_progress = ReportsInProgress.objects.get(provider=health_provider, state='actively_editing')
         except ReportsInProgress.DoesNotExist:
             submission.response = "Please tell us what POW you are reporting for before submitting data."
             submission.has_errors = True
@@ -182,9 +202,8 @@ def fhd_xform_handler(sender, **kwargs):
             return
 
     ## 2. -> process the  xforms for validity
-    if xform.keyword in XFORMS and  xform.keyword != 'pow':
-        check_basic_validity(xform.keyword, submission, health_provider, 1)
-
+    if xform.keyword in XFORMS and not (xform.keyword in ['pow', 'sum', 'summary']):        
+        check_basic_validity(xform.keyword, submission, health_provider, 1, report_in_progress) 
         value_list = []
         for v in submission.eav.get_values().order_by('attribute__xformfield__order'):
             value_list.append("%s %d" % (v.attribute.name, v.value_int))
