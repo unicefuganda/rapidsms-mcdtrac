@@ -8,8 +8,7 @@ from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
 
-XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg'])
-REPORTS = getattr(settings, 'MCDTRAC_XFORM_REPORTS', ['FHD'])
+XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
@@ -54,7 +53,97 @@ def check_basic_validity(xform_type, submission, health_provider, day_range):
         s.has_errors = True
         s.save()
 
-def mcd_xform_handler(sender, **kwargs):
+def fhd_start_date():
+    """
+    returns the report date for this report.
+
+    for now i'll set it to the monday of the week when reports are comming in.
+    TODO: change this to return "last friday"
+    """
+    today = datetime.date.today()
+    return today - datetime.timedelta(days=today.weekday())
+
+##
+## XFormReport constraints.
+##
+
+def fhd_pow_constraint(xform, submission, health_provider):
+    """
+    Each report is by place of worship. This constraint begins a new report.
+
+    this constraint is stored in XFormReport.constraints[] to be read from the DB above.
+
+    note that some other reporter may have already entered data for this POW.
+
+    we need to:
+        1. check if there's any other report for this POW in progress
+        2. Create a new report if 1 above is not true
+        3. Save the report found by 1 or 2 in our scratch table.
+    """
+    if (xform.keyword != 'pow') or submission.has_errors:
+        return
+
+    xform_report = XFormReport.objects.get(name='FHD')
+    place_of_worship, new_pow = PoW.objects.get_or_create(name=submission.eav.pow_name,
+                                                 served_by=health_provider.facility)
+
+    ## look for any report_submissions open for this pow by this health center (there should be at most one)
+    report_submission, new_rs = XFormReportSubmission.objects.get_or_create(
+                                status='open',
+                                submissions__xform__keyword='pow',
+                                submissions__eav_values__value_text=place_of_worship.name,
+                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility,
+                                defaults={'report': xform_report,
+                                          'start_date': fhd_start_date()})
+
+    report_in_progress, new_rip = ReportsInProgress.objects.get_or_create(
+                                provider=health_provider,
+                                active=True,
+                                defaults={'xform_report': report_submission,
+                                          'place_of_worship': place_of_worship})
+
+    ## update report_in_progress with what we know
+    if not new_rip:
+        report_in_progress.xform_report=report_submission
+        report_in_progress.place_of_worship=place_of_worship
+        report_in_progress.save()
+
+    submission.response = 'You can now send reports for the POW: "{0}"'.format(place_of_worship.name)
+    submission.save()
+
+    report_submission.submissions.add(submission)
+    report_submission.save()
+
+
+
+def fhd_summary_constraint(xform, submission, health_provider):
+    """
+    handle summmary xform sent by in-charge
+
+    This constraint is stored in XFormReports.constraints[] (as the first item)
+    and is used to signify the end of all reports from this health facility
+    """
+
+    if (not xform.keyword in ['sum', 'summary']) or submission.has_errors:
+        return
+
+    # TODO: probably add basic checking for PINs.
+
+    # TODO: rewrite this as a models.F() single step...
+    for place_of_worship in PoW.objects.filter(served_by=health_provider.facility):
+        for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, active=True):
+            scratch.xform_report.status = 'closed'
+            scratch.xform_report.save()
+            scratch.active = False
+            scratch.save()
+    submission.response = "All POW reports for facility {0} have been marked as closed.".format(health_provider.facility)
+    submission.save()
+
+##
+## Listner to django signal when xforms are received
+##
+
+def fhd_xform_handler(sender, **kwargs):
     xform = kwargs['xform']
     if not xform.keyword in XFORMS:
         return
@@ -82,7 +171,18 @@ def mcd_xform_handler(sender, **kwargs):
             submission.save()
         return
 
-    if xform.keyword in XFORMS:
+    ## 1.0 -> check if there's an open report (pow was sent before)
+    if not xform.keyword in ['pow', 'sum', 'summary']:
+        try:
+            report_in_progress = ReportsInProgress.objects.get(provider=health_provider, active=True)
+        except ReportsInProgress.DoesNotExist:
+            submission.response = "Please tell us what POW you are reporting for before submitting data."
+            submission.has_errors = True
+            submission.save()
+            return
+
+    ## 2. -> process the  xforms for validity
+    if xform.keyword in XFORMS and  xform.keyword != 'pow':
         check_basic_validity(xform.keyword, submission, health_provider, 1)
 
         value_list = []
@@ -106,199 +206,31 @@ def mcd_xform_handler(sender, **kwargs):
         submission.save()
         return
 
-def fhd_start_date():
-    """
-    returns the report date for this report.
-
-    for now i'll set it to the monday of the week when reports are comming in.
-    """
-    today = datetime.date.today()
-    return today - datetime.timedelta(days=today.weekday())
-
-##
-## XFormReport constraints.
-##
-
-def fhd_pow_constraint(sender, **kwargs):
-    """
-    Each report is by place of worship. This constraint begins a new report.
-
-    this constraint is stored in XFormReport.constraints[] to be called bellow.
-
-    note that some other reporter may have already entered data for this POW.
-
-    we need to:
-        1. check if there's any other report for this POW in progress
-        2. Create a new report if 1 above is not true
-        3. Save the report found by 1 or 2 in our scratch table.
-    """
-    xform = kwargs['xform']
-    submission = kwargs['submission']
-    if (not xform.keyword == 'pow') or submission.has_errors:
-        return
-
-    try:
-        health_provider = submission.connection.contact.healthproviderbase.healthprovider
-    except:
-        submission.response = "You must be a reporter for FHDs. Please register first ebfore sending any information"
-        submission.has_erros = True
-        submission.save()
-        return
-
-    #TODO: re-write to loop through all matching reports...
-    try:
-        rep_list = XFormList.objects.get(xform = xform)
-    except XFormList.MultipleObjectsReturned:
-        # you could decide to just loop through each matching form ...
-        rep_list = XFormList.objects.filter(xform = xform)[0]
-    except XFormList.DoesNotExist:
-        submission.response = "This submission has not been added to any FHD report. Please try again."
-        submission.has_errors = True
-        submission.save()
-        return
-    try:
-        place_of_worship = PoW.objects.get(name=submission.eav.pow_name, served_by=health_provider.facility)
-    except PoW.DoesNotExist:
-        place_of_worship = PoW.objects.create(
-                                name=submission.eav.pow_name,
-                                served_by=health_provider.facility
-        )
-
-    try:
-        report_submission = XFormReportSubmission.objects.get( 
-                                status='open', 
-                                submissions__xform__keyword='pow',
-                                submissions__eav_values__value_text=place_of_worship.name
-        )
-    except XFormReportSubmission.DoesNotExist:
-        report_submission = XFormReportSubmission.objects.create(
-                                report=rep_list.report,
-                                status='open',
-                                start_date=fhd_start_date()
-        )
-        submission.response = "New POW FHD report created. Please send the data."
-        submission.save()
-    else:
-        submission.response = "Adding to existing POW FHD report."
-        submission.save()
-
-    report_submission.submissions.add(submission)
-    report_submission.save()
-    
-    """
-     update the xform-report-submissions being worked on if it exists,
-     create a new entry if it doesn't.
-     ReportsInProgress.MultipleObjectsReturned should NOT happen as that'd be a bug.
-    """
-    try:
-        scratch = ReportsInProgress.objects.get(provider = health_provider, active=True)
-    except ReportsInProgress.DoesNotExist:
-        scratch = ReportsInProgress(
-            provider=health_provider,
-            place_of_worship=place_of_worship,
-            xform_report=report_submission,
-            active=True
-        )
-    else:
-        scratch.place_of_worship = place_of_worship
-        scratch.xform_report = report_submission
-        
-    scratch.save()
-
-
-def fhd_summary_constraint(sender, **kwargs):
-    """
-    handle summmary xform sent by in-charge
-
-    This constraint is stored in XFormReports.constraints[] (as the first item)
-    and is used to signify the end of all reports from this health facility
-    """
-
-    xform = kwargs['xform']
-    submission = kwargs['submission']
-    if (not xform.keyword in ['sum', 'summary']) or submission.has_errors:
-        return
-
-    try:
-        health_provider = submission.connection.contact.healthproviderbase.healthprovider
-    except:
-        submission.response = "You must be a reporter for FHDs. Please register first before sending any information"
-        submission.has_erros = True
-        submission.save()
-        return
-
-    # TODO: probably add basic checking for PINs.
-
-    # TODO: rewrite this as a models.F() single step...
-    for place_of_worship in PoW.objects.filter(served_by=health_provider.facility):
-        for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, active=True):
-            scratch.xform_report.status = 'closed'
-            scratch.active = False
-            scratch.save()
-    submission.response = "All facility reports have been marked as closed."
-    submission.save()
-
-# set up the constraints
-for rep in REPORTS:
-    try:
-        xr = XFormReport.objects.get(name=rep)
-    except:
-        raise
-    else:
-        for cons in xr.constraints:
-            try:
-                # limit the objects available in the eval'ed scope
-                constraint = eval(cons, {'__builtins__': None}, {
-                    'XFormList': XFormList,
-                    'PoW': PoW,
-                    'XFormReportSubmission': XFormReportSubmission,
-                    'ReportsInProgress': ReportsInProgress,
-                    'fhd_pow_constraint': fhd_pow_constraint,
-                    'fhd_summary_constraint': fhd_summary_constraint,
-                })
-            except NameError:
-                next
-            else:
-                xform_received.connect(constraint, weak=False)
-##
-## XFormReport general handler
-##
-def fhd_add_submission_handler(sender, **kwargs):
-    """
-    add a submission to an xform-report-submission
-    
-    a particular healthprovider aka reporter will be 
-    reporting for only a single POW at once 
-    (so only one entry for ReportsInProgress should exist)
-    
-    if that for some reason fails the 2nd try: will raise 
-    ReportsInProgress.MultipleObjectsReturned
-    """
-
-    xform = kwargs['xform']
-    submission = kwargs['submission']
-    if (not xform.keyword in XFORMS) or submission.has_errors:
-        return
-
-    try:
-        health_provider = submission.connection.contact.healthproviderbase.healthprovider
-    except:
-        submission.response = "You must be a reporter for FHDs. Please register first before sending any information"
-        submission.has_erros = True
-        submission.save()
-        return
-    
-    try:
-        report = ReportsInProgress.objects.get(provider=health_provider, active=True)
-    except ReportsInProgress.DoesNotExist:
-        submission.response = "Tell me what POW you are reporting for before submitting data."
-        submission.has_errors = True
-        submission.save()
-        return
-
+    ## 3. -> add xforms to xformreport
     # append to the report
-    report.xform_report.submissions.add(submission)
-    report.xform_report.save()  # i may not need this
+    # TODO: remove any submissions that may already exist in the report
+    if not xform.keyword in ['pow', 'sum', 'summary']:
+        report_in_progress.xform_report.submissions.add(submission)
+        report_in_progress.xform_report.save()  # i may not need this
+        submission.response = 'POW: {1}. {0}'.format(submission.response, report_in_progress.place_of_worship.name)
+        submission.save()
+    else:
+        ## 4. -> process constraints from the DB (pow handler and sum handler)
+        for constraint_str in XFormReport.objects.get(name='FHD').constraints:
+            # WARNING: I'm (intentionally) not catching NameError exceptions so all constraints must exist
+            constraint = eval(constraint_str,
+                              {'__builtins__': None},
+                              {
+                                'fhd_pow_constraint': fhd_pow_constraint,
+                                'fhd_summary_constraint': fhd_summary_constraint,
+                                'PoW': PoW,
+                                'XFormReportSubmission': XFormReportSubmission,
+                                'ReportsInProgress': ReportsInProgress,
+                                'format': format,
+                                'xform': xform,
+                                'submission': submission,
+                                'health_provider': health_provider
+                               })
+            constraint(xform, submission, health_provider)
 
-xform_received.connect(mcd_xform_handler, weak=True)
-xform_received.connect(fhd_add_submission_handler, weak=False)
+xform_received.connect(fhd_xform_handler, weak=True)
