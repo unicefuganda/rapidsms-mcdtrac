@@ -7,6 +7,7 @@ from rapidsms_xforms.models import XFormReport, XFormList, XFormReportSubmission
 from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
+from .utils import last_reporting_period
 
 XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
 
@@ -57,16 +58,6 @@ def check_basic_validity(xform_type, submission, health_provider, day_range, rep
         s.has_errors = True
         s.save()
 
-def fhd_start_date():
-    """
-    returns the report date for this report.
-
-    for now i'll set it to the monday of the week when reports are comming in.
-    TODO: change this to return "last friday"
-    """
-    today = datetime.date.today()
-    return today - datetime.timedelta(days=today.weekday())
-
 ##
 ## XFormReport constraints.
 ##
@@ -86,35 +77,31 @@ def fhd_pow_constraint(xform, submission, health_provider):
     """
     if (xform.keyword != 'pow') or submission.has_errors:
         return
-
     xform_report = XFormReport.objects.get(name='FHD')
     place_of_worship, new_pow = PoW.objects.get_or_create(name=submission.eav.pow_name,
                                                  served_by=health_provider.facility)
-
     ## look for any report_submissions open for this pow by this health center (there should be at most one)
     rs = XFormReportSubmission.objects.filter(
                                 status='open',
                                 submissions__xform__keyword='pow',
                                 submissions__eav_values__value_text=place_of_worship.name,
-                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility                                
+                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility
                             ).distinct(XFormReportSubmission.pk)
     if rs.count() == 0:
         report_submission = XFormReportSubmission.objects.create(
                                 status='open',
                                 report=xform_report,
-                                start_date=fhd_start_date())
+                                start_date=last_reporting_period(period=0)[0])
     elif rs.count() == 1:
         report_submission = rs[0]
     else:
         raise RuntimeError('Found more XFormReportSubmission objects than we expected: {0}'.format(rs.count()))
-    
     report_in_progress, new_rip = ReportsInProgress.objects.get_or_create(
                                 provider=health_provider,
                                 state__endswith='editing', #allows us to swap btn the current and paused
                                 place_of_worship=place_of_worship,
                                 defaults={'xform_report': report_submission,
                                           'state': 'actively_editing'})
-
     ## update report_in_progress with what we know
     if new_rip:
         for old_rip in ReportsInProgress.objects.filter(
@@ -133,8 +120,6 @@ def fhd_pow_constraint(xform, submission, health_provider):
 
     report_submission.submissions.add(submission)
     report_submission.save()
-
-
 
 def fhd_summary_constraint(xform, submission, health_provider):
     """
@@ -202,8 +187,8 @@ def fhd_xform_handler(sender, **kwargs):
             return
 
     ## 2. -> process the  xforms for validity
-    if xform.keyword in XFORMS and not (xform.keyword in ['pow', 'sum', 'summary']):        
-        check_basic_validity(xform.keyword, submission, health_provider, 1, report_in_progress) 
+    if xform.keyword in XFORMS and not (xform.keyword in ['pow', 'sum', 'summary']):
+        check_basic_validity(xform.keyword, submission, health_provider, 1, report_in_progress)
         value_list = []
         for v in submission.eav.get_values().order_by('attribute__xformfield__order'):
             value_list.append("%s %d" % (v.attribute.name, v.value_int))
