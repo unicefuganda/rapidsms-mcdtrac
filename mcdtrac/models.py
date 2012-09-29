@@ -1,9 +1,8 @@
 from django.db import models
-from rapidsms.models import Contact
 from healthmodels.models.HealthFacility import HealthFacility
 from healthmodels.models.HealthProvider import HealthProvider
 from rapidsms_xforms.models import XForm, XFormSubmission
-from rapidsms_xforms.models import XFormReport, XFormList, XFormReportSubmission
+from rapidsms_xforms.models import XFormReport, XFormReportSubmission
 from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
@@ -46,9 +45,9 @@ class ReportsInProgress(models.Model):
     state = models.CharField(max_length=255, null=True, blank=True)
 
 def check_basic_validity(xform_type, submission, health_provider, day_range, report_in_progress):
-    if xform_type in ['sum', 'summary', 'pow']: # these are just markers
+    if xform_type in ['sum', 'summary', 'pow']:  # these are just markers
         return
-    xform = XForm.objects.get(keyword=xform_type) # any reason for not just passing the xform to this function?
+    xform = XForm.objects.get(keyword=xform_type)  # any reason for not just passing the xform to this function?
     start_date = datetime.datetime.now() - datetime.timedelta(hours=(day_range * 24))
     for s in XFormSubmission.objects.filter(connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility,
                                             xform=xform,
@@ -98,7 +97,7 @@ def fhd_pow_constraint(xform, submission, health_provider):
         raise RuntimeError('Found more XFormReportSubmission objects than we expected: {0}'.format(rs.count()))
     report_in_progress, new_rip = ReportsInProgress.objects.get_or_create(
                                 provider=health_provider,
-                                state__endswith='editing', #allows us to swap btn the current and paused
+                                state__endswith='editing',  # allows us to swap btn the current and paused
                                 place_of_worship=place_of_worship,
                                 defaults={'xform_report': report_submission,
                                           'state': 'actively_editing'})
@@ -107,17 +106,16 @@ def fhd_pow_constraint(xform, submission, health_provider):
         for old_rip in ReportsInProgress.objects.filter(
                                 provider=health_provider,
                                 state='actively_editing').exclude(pk=report_in_progress.pk):
-            old_rip.state='paused_editing'
+            old_rip.state = 'paused_editing'
             old_rip.save()
     else:
-        report_in_progress.xform_report=report_submission # shouldn't need this
-        report_in_progress.state='actively_editing'
-        report_in_progress.place_of_worship=place_of_worship #shouldn't need this
+        report_in_progress.xform_report = report_submission  # shouldn't need this
+        report_in_progress.state = 'actively_editing'
+        report_in_progress.place_of_worship = place_of_worship  # shouldn't need this
         report_in_progress.save()
-
-    submission.response = 'You can now send reports for the POW: "{0}"'.format(place_of_worship.name)
+    submission.response = 'Your reported POW, "{0}" has been set. Please send the data for this POW.'.format(place_of_worship.name)
     submission.save()
-
+    ## add the submission to the reportsubmission.
     report_submission.submissions.add(submission)
     report_submission.save()
 
@@ -128,12 +126,9 @@ def fhd_summary_constraint(xform, submission, health_provider):
     This constraint is stored in XFormReports.constraints[] (as the first item)
     and is used to signify the end of all reports from this health facility
     """
-
     if (not xform.keyword in ['sum', 'summary']) or submission.has_errors:
         return
-
     # TODO: probably add basic checking for PINs.
-
     # TODO: rewrite this as a models.F() single step...
     for place_of_worship in PoW.objects.filter(served_by=health_provider.facility):
         for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, state__endswith='editing'):
@@ -153,10 +148,8 @@ def fhd_xform_handler(sender, **kwargs):
     if not xform.keyword in XFORMS:
         return
     submission = kwargs['submission']
-
     if submission.has_errors:
         return
-
     # TODO: check validity
     kwargs.setdefault('message', None)
     message = kwargs['message']
@@ -166,7 +159,6 @@ def fhd_xform_handler(sender, **kwargs):
             return
     except AttributeError:
         return
-
     try:
         health_provider = submission.connection.contact.healthproviderbase.healthprovider
     except:
@@ -175,7 +167,6 @@ def fhd_xform_handler(sender, **kwargs):
             submission.has_errors = True
             submission.save()
         return
-
     ## 1.0 -> check if there's an open report (pow was sent before)
     if not xform.keyword in ['pow', 'sum', 'summary']:
         try:
@@ -185,7 +176,6 @@ def fhd_xform_handler(sender, **kwargs):
             submission.has_errors = True
             submission.save()
             return
-
     ## 2. -> process the  xforms for validity
     if xform.keyword in XFORMS and not (xform.keyword in ['pow', 'sum', 'summary']):
         check_basic_validity(xform.keyword, submission, health_provider, 1, report_in_progress)
@@ -203,16 +193,13 @@ def fhd_xform_handler(sender, **kwargs):
             pass
         submission.response = "You reported %s.If there is an error,please resend." % ','.join(value_list)
         submission.save()
-
     if xform.keyword in XFORMS and \
         not (submission.connection.contact and submission.connection.contact.active):
         submission.has_errors = True
         submission.save()
         return
-
     ## 3. -> add xforms to xformreport
     # append to the report
-    # TODO: remove any submissions that may already exist in the report
     if not xform.keyword in ['pow', 'sum', 'summary']:
         report_in_progress.xform_report.submissions.add(submission)
         report_in_progress.xform_report.save()  # i may not need this
