@@ -207,21 +207,10 @@ def fhd_xform_handler(sender, **kwargs):
         submission.save()
     else:
         ## 4. -> process constraints from the DB (pow handler and sum handler)
-        for constraint_str in XFormReport.objects.get(name='FHD').constraints:
-            # WARNING: I'm (intentionally) not catching NameError exceptions so all constraints must exist
-            constraint = eval(constraint_str,
-                              {'__builtins__': None},
-                              {
-                                'fhd_pow_constraint': fhd_pow_constraint,
-                                'fhd_summary_constraint': fhd_summary_constraint,
-                                'PoW': PoW,
-                                'XFormReportSubmission': XFormReportSubmission,
-                                'ReportsInProgress': ReportsInProgress,
-                                'format': format,
-                                'xform': xform,
-                                'submission': submission,
-                                'health_provider': health_provider
-                               })
-            constraint(xform, submission, health_provider)
+        constraints = { 'fhd_pow_constraint': fhd_pow_constraint,
+                        'fhd_summary_constraint': fhd_summary_constraint}
+        for c in XFormReport.objects.get(name='FHD').constraints:
+            # WARNING: I'm (intentionally) not catching KeyError exceptions so all constraints must exist
+            constraints[c](xform, submission, health_provider)
 
 xform_received.connect(fhd_xform_handler, weak=True)
