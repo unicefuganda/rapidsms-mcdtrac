@@ -84,8 +84,10 @@ def fhd_pow_constraint(xform, submission, health_provider):
                                 status='open',
                                 submissions__xform__keyword='pow',
                                 submissions__eav_values__value_text=place_of_worship.name,
-                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility
-                            ).distinct(XFormReportSubmission.pk)
+                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility                                
+                            ).distinct('pk')
+#                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility
+#                            ).distinct(XFormReportSubmission.pk)
     if rs.count() == 0:
         report_submission = XFormReportSubmission.objects.create(
                                 status='open',

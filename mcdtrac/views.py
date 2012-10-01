@@ -118,6 +118,11 @@ def view_submissions(req):
       submissions = submissions,
       xform = xform,
             )
+    
+def mcd_dashboard(request):
+    return render_to_response(
+        "mcdtrac/dashboard.html",
+        {},context_instance=RequestContext(request))
 
 #    return render_to_response("mcdtrac/submissions.html",
 #                              dict(xform=xform, fields=fields, submissions=page, breadcrumbs=breadcrumbs,
