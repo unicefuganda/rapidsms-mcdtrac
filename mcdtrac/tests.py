@@ -93,10 +93,9 @@ class MCDTests(TestCase): #pragma: no cover
         self.assertEquals(self.contact.active, True)
         self.assertEquals(Message.objects.all().order_by('-date')[0].text, "Your reported POW, St Paul's Mulgo has been set .Please send the data for this POW.")
         
-    def testReportGoodSubmission(self):
+    def testGoodReportSubmission(self):
+        self.fake_incoming("pow.St Paul's Mulgo")
         self.fake_incoming('dpt.2.3')
-        week = 7 * 86400
-        self.elapseTime(XFormSubmission.objects.all()[0], week * 2)
         self.assertEquals(Message.objects.all().order_by('-date')[0].text, 'You reported Male children 2, and Female children 3.If there is an error,please resend.')
         
         
