@@ -1,0 +1,28 @@
+{% extends "generic/partials/partial_header.html" %}
+
+{% block tablehead %}
+<tr>
+    <th rowspan="2">
+        &nbsp;
+    </th>
+    <th colspan="11">
+        Child Tally
+    </th>
+    <th colspan="7">
+        Maternal Health Tally
+    </th>
+    <th colspan="2">
+        Birth Register
+    </th>
+</tr>
+<tr>
+    {% for name, colspan, href in top_columns %}
+        <th colspan="{{ colspan }}" class="stats_title">
+            {% if href %}<a href="{{ href }}">{{ name }}</a>{% else %}
+            {{ name }}
+            {% endif %}
+        </th>
+    {% endfor %}
+</tr>
+{{ block.super }}
+{% endblock %}

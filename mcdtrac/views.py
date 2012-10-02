@@ -10,8 +10,9 @@ from rapidsms_xforms.models import XForm, XFormSubmission
 from django.core.paginator import Paginator
 from generic.views import generic
 from .forms import XFormsForm
+from uganda_common.utils import get_location_for_user, get_xform_dates, total_attribute_value
 
-mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'muac', 'tet', 'anc', 'eid', 'reg', 'me', 'vit', 'worm'])
+mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
 
 def save_upload(uploaded, filename, raw_data):
     '''
@@ -78,6 +79,23 @@ def ajax_upload(request):
         ret_json = { 'success': success, }
         return HttpResponse(json.dumps(ret_json))
 
+def get_location(request, district_id):
+    user_location = Location.objects.get(pk=district_id) if district_id else get_location_for_user(request.user)
+    return user_location
+
+def location_values(location, data_dicts):
+    value = 0
+    if location == Location.tree.root_nodes()[0]:
+        for dict in data_dicts:
+            if dict['value']:
+                value +=dict['value']
+    else:
+        for dict in data_dicts:
+            if dict['location_name'] == location.name:
+                if dict['value']:
+                    value = dict['value']
+    return value if value else '-'
+
 def mcdtrac_xforms(req):
     xforms = XForm.on_site.filter(keyword__in=mcd_keywords)
     breadcrumbs = (('XForms', ''),)
@@ -118,12 +136,24 @@ def view_submissions(req):
       submissions = submissions,
       xform = xform,
             )
-    
+
 def mcd_dashboard(request):
     return render_to_response(
         "mcdtrac/dashboard.html",
         {},context_instance=RequestContext(request))
 
+def fhd_submission_stats(request, district_id=None):
+    stats = [] # columns to be sent to generic start out as blank
+    user_location = Location.objects.get(pk=district_id) if district_id else get_location_for_user(request.user)
+    location = Location.tree.root_nodes()[0]
+    dates = get_xform_dates(request)
+    values = total_attribute_value(['dpt_males'], start_date=dates.get('start'), end_date=dates.get('end'), location=location)
+    stats.append(('males', location_values(user_location, values)))
+    values = total_attribute_value(['dpt_females'], start_date=dates.get('start'), end_date=dates.get('end'), location=location)
+    stats.append(('females', location_values(user_locaiton, values)))
+
+    res = {'dates': dates, 'stats': stats}
+    return res
 #    return render_to_response("mcdtrac/submissions.html",
 #                              dict(xform=xform, fields=fields, submissions=page, breadcrumbs=breadcrumbs,
 #                                   paginator=paginator, page=page),
