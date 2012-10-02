@@ -91,7 +91,7 @@ class MCDTests(TestCase): #pragma: no cover
     def testPowReport(self):
         self.fake_incoming("pow.St Paul's Mulgo")
         self.assertEquals(self.contact.active, True)
-        self.assertEquals(Message.objects.all().order_by('-date')[0].text, "Your reported POW, St Paul's Mulgo has been set .Please send the data for this POW.")
+        self.assertEquals(Message.objects.all().order_by('-date')[0].text, "Your reported POW, St Paul's Mulgo, has been set .Please send the data for this POW.")
         
     def testGoodReportSubmission(self):
         self.fake_incoming("pow.St Paul's Mulgo")
