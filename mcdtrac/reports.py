@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db.models import Count, Sum
-from generic.reports import Column as Col, Report
+from generic.reports import Column, Report
 from generic.utils import flatten_list
 from rapidsms.contrib.locations.models import Location
 from rapidsms_httprouter.models import Message
@@ -13,57 +13,88 @@ from uganda_common.utils import reorganize_dictionary
 from poll.models import Response, Poll
 from .utils import previous_calendar_week, get_location_for_user
 import datetime
+from django.db.models.sql.constants import *
 
 from generic.reporting.views import ReportView
-from generic.reporting.reports import Column
 from uganda_common.views import XFormReport
 
 class FHDMixin(object):
     """
-    Mixins for COlumn objects bellow for similar functionality.
+    Mixins for Column objects bellow for similar functionality.
+
+    TODO: merge with the FHDReportColumn since we only have one type of Column
     """
-    LOCATION_ID = 'submission__connection__contact__healthproviderbase__healthprovider__reporting_location__pk'
-    LOCATION_NAME = 'submission__connection__contact__healthproviderbase__healthprovider__reporting_location__name'
 
     def total_attribute_by_location(self, report, keyword, single_week=False):
         print report.location
         start_date = report.start_date
+        end_date = report.end_date
         if single_week:
-            start_date = report.end_date - datetime.timedelta(7)
-        #import pdb; pdb.set_trace()
-        return XFormSubmissionValue.objects.exclude(submission__has_errors=True)\
-            .exclude(submission__connection__contact=None)\
-            .filter(created__range=(start_date, report.end_date))\
-            .filter(attribute__slug__in=keyword)\
-            .filter(submission__connection__contact__healthproviderbase__healthprovider__reporting_location__in=report.location.get_descendants(include_self=True).all())\
-            .values(self.LOCATION_NAME,
-                    self.LOCATION_ID)\
-            .annotate(Sum('value_int'))
+            start_date = end_date - datetime.timedelta(7)
 
+        # ## from django.db.models.sql.constants import *
+        # ## defined in the import above ... RHS_ALIAS = 1
+        # q = XFormSubmissionValue.objects.exclude(
+        #         submission__connection__contact=None
+        #     ).filter(
+        #         submission__has_errors=False,
+        #         attribute__slug__in=keyword,
+        #         submission__created__lte=end_date,
+        #         submission__created__gte=start_date
+        #     ).values(
+        #         'submission__connection__contact__healthproviderbase__healthprovider__reporting_location__name'
+        #     )
+        # repr(q.extra(tables=['locations_location']))  ## force queryset to be evaluated
+        # alias = q.query.table_map['locations_location'][RHS_ALIAS]
+        # print alias  ## debug
 
-    def total_dateless_attribute_by_school(self, report, keyword):
-        return XFormSubmissionValue.objects.exclude(submission__has_errors=True)\
-            .exclude(submission__connection__contact=None)\
-            .filter(attribute__slug__in=keyword)\
-            .filter(submission__connection__contact__emisreporter__schools__location__in=report.location.get_descendants(include_self=True).all())\
-            .values(self.SCHOOL_NAME,
-                    self.SCHOOL_ID)\
-            .annotate(Sum('value_int'))
+        alias = 'T12'
 
+        if report.location.get_children().count() > 1:
+            location_children_where = '{0}.id in {1}'.format(
+                    alias, str(
+                                tuple(
+                                    report.location.get_children().values_list('pk', flat=True)
+                                )
+                            )
+            )
+        else:
+            location_children_where = '{0}.id in {1}'.format(
+                    alias, report.location.get_children()[0].pk
+            )
 
-    def num_weeks(self, report):
-        if report.end_date == report.start_date:
-            report.end_date = report.end_date + datetime.timedelta(days=1)
-        td = report.end_date - report.start_date
-        holidays = getattr(settings, 'SCHOOL_HOLIDAYS', [])
-        for start, end in holidays:
-            if start > report.start_date and end < report.end_date:
-                td -= (end - start)
+        return list(XFormSubmissionValue.objects.exclude(
+                submission__connection__contact=None
+            ).filter(
+                submission__has_errors=False,
+                attribute__slug__in=keyword,
+                submission__created__lte=end_date,
+                submission__created__gte=start_date
+            ).values(
+                'submission__connection__contact__healthproviderbase__healthprovider__reporting_location__name'
+            ).extra(
+                tables=['locations_location'],
+                where=[
+                    '{0}.lft <= locations_location.lft'.format(alias),
+                    '{0}.rght >= locations_location.lft'.format(alias),
+                    location_children_where
+                ],
+                select={
+                    'location_name': '{0}.name'.format(alias),
+                    'location_id': '{0}.id'.format(alias),
+                    'rght': '{0}.rght'.format(alias),
+                    'lft': '{0}.lft'.format(alias)
+                }
+            ).values(
+                'location_name', 'location_id', 'lft', 'rght'
+            ).annotate(
+                value=Sum('value_int')
+            ).extra(
+                order_by=['location_name']
+            )
+        )
 
-#        return td.days / 7
-        return td.days / 7 if td.days / 7 > 1 else 1
-
-class FHDReportColumn(Col, FHDMixin):
+class FHDReportColumn(Column, FHDMixin):
     """
     Return the values for a particular column (male/female)
     generic will use the add_to_report function to create the report dictionary
@@ -77,12 +108,10 @@ class FHDReportColumn(Col, FHDMixin):
 
     def add_to_report(self, report, key, dictionary):
         val = self.total_attribute_by_location(report, self.keyword)
-        print val
-        # num_weeks = self.num_weeks(report)
-        # for rdict in val:
-        #     rdict['value_int__sum'] /= num_weeks
-        # import pdb; pdb.set_trace()
-        reorganize_dictionary(key, val, dictionary, self.LOCATION_ID, self.LOCATION_NAME, 'value_int__sum')
+        # print val  ## debug
+        # print key  ## debug
+        # reorganize_dictionary(key, val, dictionary, 'location_id', 'location_name', 'value')
+        reorganize_location(key, val, dictionary)
 
 
 class FHDReportBase(Report):
@@ -117,18 +146,3 @@ class FHDReport(FHDReportBase):
     eid_female = FHDReportColumn(['eid_female'])
     breg_male = FHDReportColumn(['breg_male'])
     breg_female = FHDReportColumn(['breg_female'])
-# class AttendanceReport(XFormReport):
-#     boys = WeeklyAttributeBySchoolColumn(["boys_%s" % g for g in GRADES])
-#     girls = WeeklyAttributeBySchoolColumn(["girls_%s" % g for g in GRADES])
-#     total_students = WeeklyAttributeBySchoolColumn((["girls_%s" % g for g in GRADES] + ["boys_%s" % g for g in GRADES]))
-#     percentage_students = AverageWeeklyTotalRatioColumn((["girls_%s" % g for g in GRADES] + ["boys_%s" % g for g in GRADES]), (["enrolledg_%s" % g for g in GRADES] + ["enrolledb_%s" % g for g in GRADES]))
-#     week_attrib = ["girls_%s" % g for g in GRADES] + ["boys_%s" % g for g in GRADES]
-#     total_attrib = ["enrolledb_%s" % g for g in GRADES] + ["enrolledg_%s" % g for g in GRADES]
-#     percentange_student_absentism = WeeklyPercentageColumn(week_attrib, total_attrib, True)
-#     male_teachers = WeeklyAttributeBySchoolColumn("teachers_m")
-#     female_teachers = WeeklyAttributeBySchoolColumn("teachers_f")
-#     total_teachers = WeeklyAttributeBySchoolColumn(["teachers_f", "teachers_m"])
-#     percentage_teacher = AverageWeeklyTotalRatioColumn(["teachers_f", "teachers_m"], ["deploy_f", "deploy_m"])
-#     week_attrib = ["teachers_f", "teachers_m"]
-#     total_attrib = ["deploy_f", "deploy_m"]
-#     percentange_teachers_absentism = WeeklyPercentageColumn(week_attrib, total_attrib, True)

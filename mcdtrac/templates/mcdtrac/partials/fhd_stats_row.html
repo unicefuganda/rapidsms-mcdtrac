@@ -1,8 +1,8 @@
 {% load dict %}
 <tr>
-<td>
-    {{ object.submission__connection__contact__healthproviderbase__healthprovider__reporting_location__name }}
-</td>
+<th>
+    {{ object.location_name }}
+</th>
 {% for colname, sortable, colattr, sorter in columns %}
 {% if not forloop.first %}
     <td>{% if object|dict:colattr %}{{ object|dict:colattr|floatformat }}{% else %}0{% endif %}</td>
