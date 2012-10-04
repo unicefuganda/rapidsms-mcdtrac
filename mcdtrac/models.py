@@ -84,7 +84,7 @@ def fhd_pow_constraint(xform, submission, health_provider):
                                 status='open',
                                 submissions__xform__keyword='pow',
                                 submissions__eav_values__value_text=place_of_worship.name,
-                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility                                
+                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility
                             ).distinct('pk')
 #                                submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility
 #                            ).distinct(XFormReportSubmission.pk)
@@ -115,7 +115,7 @@ def fhd_pow_constraint(xform, submission, health_provider):
         report_in_progress.state = 'actively_editing'
         report_in_progress.place_of_worship = place_of_worship  # shouldn't need this
         report_in_progress.save()
-    submission.response = 'Your reported POW, "{0}" has been set. Please send the data for this POW.'.format(place_of_worship.name)
+    submission.response = 'Your reported POW, {0}, has been set. Please send the data for this POW.'.format(place_of_worship.name)
     submission.save()
     ## add the submission to the reportsubmission.
     report_submission.submissions.add(submission)
@@ -205,7 +205,6 @@ def fhd_xform_handler(sender, **kwargs):
     if not xform.keyword in ['pow', 'sum', 'summary']:
         report_in_progress.xform_report.submissions.add(submission)
         report_in_progress.xform_report.save()  # i may not need this
-        submission.response = 'POW: {1}. {0}'.format(submission.response, report_in_progress.place_of_worship.name)
         submission.save()
     else:
         ## 4. -> process constraints from the DB (pow handler and sum handler)
