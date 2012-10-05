@@ -15,7 +15,7 @@ from .reports import FHDReport
 urlpatterns = patterns('',
     url(r'^mcdtrac/demo$', login_required(mcd_dashboard), name='mcds'),
     url(r'^mcdtrac/dhts/$', direct_to_template, {'template': 'stats.html'} ),
-#    url(r'^mcdtrac/', login_required(view_submissions), name='mcds'),
+    url(r'^mcdtrac/messages/?$', login_required(view_submissions), name='mcds'),
     url(r'^mcdtrac/xforms/$', login_required(mcdtrac_xforms), name='mcd-xforms'),
     url(r'^mcdtrac/(?P<form_id>\d+)/submissions/$', login_required(view_submissions), name='mcd-submissions'),
     #Export CSV
