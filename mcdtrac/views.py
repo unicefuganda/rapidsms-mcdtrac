@@ -104,11 +104,12 @@ def mcdtrac_xforms(req):
         { 'xforms': xforms, 'breadcrumbs': breadcrumbs },
         context_instance=RequestContext(req))
 
-def view_submissions(req):
-    if req.method == 'POST':
-        form_id = req.POST.get('form_id') if req.POST.get('form_id') else None
-    else:
-        form_id = None
+def view_submissions(req, form_id=None):
+    if form_id == None:
+        if req.method == 'POST':
+            form_id = req.POST.get('form_id') if req.POST.get('form_id') else None
+        else:
+            form_id = None
 
     xform = XForm.on_site.get(keyword = mcd_keywords[0]) if form_id == None\
          else XForm.on_site.get(pk=form_id)
