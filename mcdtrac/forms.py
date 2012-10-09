@@ -3,12 +3,12 @@ from django import forms
 from rapidsms_xforms.models import XForm
 from generic.forms import ActionForm, FilterForm
 
-mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'muac', 'tet', 'anc', 'eid', 'reg', 'me', 'vit', 'worm'])
+mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
 
 class XFormsForm(FilterForm):
     xform_id = forms.ChoiceField(label="XForm", choices=(('', '-----'),) + tuple([(int(xf.pk),
                                  xf.name) for xf in
-                                 XForm.on_site.filter(keyword__in=mcd_keywords)]), 
+                                 XForm.on_site.filter(keyword__in=mcd_keywords)]),
                                  required=False,
                                  widget=forms.Select({'onchange':'select_xform(this);'}))
 
