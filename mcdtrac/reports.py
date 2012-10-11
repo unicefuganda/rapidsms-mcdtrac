@@ -26,7 +26,7 @@ class FHDMixin(object):
     """
 
     def total_attribute_by_location(self, report, keyword, single_week=False):
-        print report.location
+        #print report.location  # debug
         start_date = report.start_date
         end_date = report.end_date
         if single_week:
