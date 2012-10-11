@@ -76,7 +76,7 @@ class FHDMixin(object):
                 tables=['locations_location'],
                 where=[
                     '{0}.lft <= locations_location.lft'.format(alias),
-                    '{0}.rght >= locations_location.lft'.format(alias),
+                    '{0}.rght >= locations_location.rght'.format(alias),
                     location_children_where
                 ],
                 select={
@@ -89,8 +89,8 @@ class FHDMixin(object):
                 'location_name', 'location_id', 'lft', 'rght'
             ).annotate(
                 value=Sum('value_int')
-            ).extra(
-                order_by=['location_name']
+            # ).extra(
+            #     order_by=['location_name']
             )
         )
 
@@ -116,14 +116,33 @@ class FHDReportColumn(Column, FHDMixin):
 
 class FHDReportBase(Report):
 
+    drill_to_facility = False
+
     def __init__(self, request, dates):
         try:
-            self.location = get_location_for_user(request.user)
+            self.location_root = get_location_for_user(request.user)
         except:
             pass
-        if self.location is None:
-            self.location = Location.tree.root_nodes()[0]
+        if self.location_root is None:
+            self.location_root = Location.tree.root_nodes()[0]
+        try:
+            self.drill_on(int(request.POST['drill_key']))
+        except:
+            self.location = self.location_root
         Report.__init__(self, request, dates)
+
+    def drill_on(self, key):
+        #print "drilling on {0}".format(int(key)) # debug
+        try:
+            self.location = Location.objects.get(pk=int(key))
+        except:
+            self.location = self.location_root
+        while self.location.get_children().count() == 1 and not self.location.type == 'sub_county':
+            # drill again as long as there's only one child
+            self.location = self.location.get_children[0]
+
+        if self.location.type.name == 'sub_county':
+            self.drill_to_facility = True
 
 class FHDReport(FHDReportBase):
     dpt_male = FHDReportColumn(['dpt_male'])
