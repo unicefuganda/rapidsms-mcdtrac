@@ -179,7 +179,7 @@ def fhd_xform_handler(sender, **kwargs):
             submission.save()
             return
     ## 2. -> process the  xforms for validity
-    if xform.keyword in XFORMS and not (xform.keyword in ['pow', 'sum', 'summary']):
+    if xform.keyword in XFORMS and not (xform.keyword in ['pow']):
         check_basic_validity(xform.keyword, submission, health_provider, 1, report_in_progress)
         value_list = []
         for v in submission.eav.get_values().order_by('attribute__xformfield__order'):
