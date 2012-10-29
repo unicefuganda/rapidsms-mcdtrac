@@ -4,8 +4,6 @@
     <a href="javascript:void(0)" onclick="drill(this, '{{ object.key }}')">{{ object.location_name }}</a>
 </th>
 {% for colname, sortable, colattr, sorter in columns %}
-{% if not forloop.first %}
     <td>{% if object|dict:colattr %}{{ object|dict:colattr|floatformat }}{% else %}0{% endif %}</td>
-{% endif %}
 {% endfor %}
 </tr>

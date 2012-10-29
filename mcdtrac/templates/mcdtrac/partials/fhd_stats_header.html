@@ -1,28 +1,54 @@
 {% extends "generic/partials/partial_header.html" %}
 
 {% block tablehead %}
-<tr>
-    <th rowspan="2">
-        &nbsp;
-    </th>
-    <th colspan="11">
-        Child Tally
-    </th>
-    <th colspan="7">
-        Maternal Health Tally
-    </th>
-    <th colspan="2">
-        Birth Register
-    </th>
-</tr>
-<tr>
-    {% for name, colspan, href in top_columns %}
-        <th colspan="{{ colspan }}" class="stats_title">
-            {% if href %}<a href="{{ href }}">{{ name }}</a>{% else %}
-            {{ name }}
-            {% endif %}
+    <tr>
+        <th rowspan="2">
+            &nbsp;
         </th>
-    {% endfor %}
-</tr>
-{{ block.super }}
+        <th colspan="11">
+            Child Tally
+        </th>
+        <th colspan="7">
+            Maternal Health Tally
+        </th>
+        <th colspan="2">
+            Birth Register
+        </th>
+    </tr>
+    <tr>
+        {% for name, colspan, href in top_columns %}
+            <th colspan="{{ colspan }}" class="stats_title">
+                {% if href %}<a href="{{ href }}">{{ name }}</a>{% else %}
+                {{ name }}
+                {% endif %}
+            </th>
+        {% endfor %}
+    </tr>
+    <tr>
+        <th>&nbsp;</th>
+        {% if columns %}
+            {% for column_name, sortable, sort_param, sorter in columns %}
+                <th>
+                    {% if sortable %}
+                        {% if sort_param == sort_column and sort_ascending %}
+                            <a href="javascript:void(0)" onclick="sort(this, '{{ sort_param }}', 'False')">
+                        {% else %}
+                            <a href="javascript:void(0)" onclick="sort(this, '{{ sort_param }}', 'True')">
+                        {% endif %}
+                    {% endif %}
+                        {{ column_name|linebreaksbr }}
+                    {% if sortable %}
+                        {% if sort_param == sort_column %}
+                            {% if not sort_ascending %}
+                                <img align="absmiddle" src="{{ MEDIA_URL }}rapidsms/icons/silk/sort_descending.png"/>
+                            {% else %}
+                                <img align="absmiddle" src="{{ MEDIA_URL }}rapidsms/icons/silk/sort_ascending.png"/>
+                            {% endif %}
+                        {% endif %}
+                        </a>
+                    {% endif %}
+                </th>
+            {% endfor %}
+        {% endif %}
+    </tr>
 {% endblock %}
