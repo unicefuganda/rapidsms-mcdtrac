@@ -7,28 +7,83 @@ from healthmodels.models.HealthProvider import HealthProvider
 from healthmodels.models.HealthFacility import HealthFacility
 from rapidsms.contrib.locations.models import Location
 from rapidsms.models import Contact
-from django.db.models import Count
+from django.db.models import Count, Max, Min
 from uganda_common.utils import *
 from rapidsms_httprouter.models import Message
 
-def last_reporting_period(period=1, weekday=getattr(settings, 'FIRSTDAY_OF_REPORTING_WEEK', 3), todate=False):
+try:
+    if not XFORMS:
+        XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+except NameError:
+    XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+
+def last_reporting_period(period=1, weekday=getattr(settings, 'FIRSTDAY_OF_REPORTING_WEEK', 3), todate=False, offset=None):
     """
     Find a date range that spans from the most recent Wednesday (exactly a week ago if
     today is Wednesday) to the beginning of Thursday, one week prior
-    
+
     if period is specified, this wednesday can be exactly <period> weeks prior
+
+    if offset is specified and is a datetime.datetime object, then calculate
+    from offset rather than today.
+    in which case the last date if todate=True is the offset.
     """
-    d = datetime.datetime.now()
+    if offset == None or not isinstance(offset, datetime.datetime):
+        d = datetime.datetime.now()
+    else:
+        d = offset
+
     d = datetime.datetime(d.year, d.month, d.day)
     # find the past day with weekday() of 3
     last_thursday = d - datetime.timedelta((((7 - weekday) + d.weekday()) % 7)) - datetime.timedelta((period - 1) * 7)
-    return (last_thursday - datetime.timedelta(7), datetime.datetime.now() if todate else last_thursday,)
+
+    if todate:
+        if not isinstance(offset, datetime.datetime):
+            offset = datetime.datetime.now()
+    else:
+        offset = last_thursday
+
+    return (last_thursday - datetime.timedelta(7), offset,)
+
+def fhd_get_xform_dates(request):
+    """
+    Process date variables from POST
+    """
+    #    dates = {}
+    dates = get_dates_from_post(request)
+    if ('start' in dates) and ('end' in dates):
+        request.session['start_date'] = dates['start']
+        request.session['end_date'] = dates['end']
+    elif request.GET.get('start_date', None) and request.GET.get('end_date', None):
+        request.session['start_date'] = dates['start'] = \
+        datetime.datetime.fromtimestamp(int(request.GET['start_date']))
+        request.session['end_date'] = dates['end'] = end_date = \
+        datetime.datetime.fromtimestamp(int(request.GET['end_date']))
+    elif request.session.get('start_date', None) and request.session.get('end_date', None):
+        dates['start'] = request.session['start_date']
+        dates['end'] = request.session['end_date']
+    dts = XFormSubmission.objects.filter(
+                xform__keyword__in=XFORMS
+            ).aggregate(
+                Max('created'), Min('created')
+            )
+    dates['max'] = dts.get('created__max', None)
+    dates['min'] = dts.get('created__min', None)
+    dates.setdefault(
+        'start',
+        last_reporting_period(period=1, weekday=0, offset=dates['max'])[0]
+    )
+    dates.setdefault(
+        'end',
+        last_reporting_period(period=1, weekday=0, offset=dates['max'])[1] - datetime.timedelta(days=1)
+    )
+    return dates
 
 def total_facilities(location, count=True):
     """
     Find all health facilities whose catchment areas are somewhere inside
     the passed in location.
-    
+
     Return their count if count is True, otherwise return the queryset
     """
     if not location:
@@ -116,7 +171,7 @@ def get_latest_report(facility, keyword=None):
                 .latest('created')
     except XFormSubmission.DoesNotExist:
         return None
-    
+
 def get_last_reporting_date(facility):
     report = get_latest_report(facility)
     if report:
