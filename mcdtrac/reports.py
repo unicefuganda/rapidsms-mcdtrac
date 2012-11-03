@@ -132,14 +132,10 @@ class FHDReportBase(Report):
         Report.__init__(self, request, dates)
 
     def drill_on(self, key):
-        #print "drilling on {0}".format(int(key)) # debug
-        try:
-            self.location = Location.objects.get(pk=int(key))
-        except:
-            self.location = self.location_root
+        self.location = Location.objects.get(pk=int(key))
         while self.location.get_children().count() == 1 and not self.location.type == 'sub_county':
             # drill again as long as there's only one child
-            self.location = self.location.get_children[0]
+            self.location = self.location.get_children()[0]
 
         if self.location.type.name == 'sub_county':
             self.drill_to_facility = True
