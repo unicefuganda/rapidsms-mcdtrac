@@ -1,0 +1,18 @@
+{% extends "generic/partials/partial_base.html" %}
+{% block partial_base_content %}
+	{% load fhd_stats_extras %}
+	{% for l in object_list.location|breadcrumb:object_list.location_root.pk %}
+		{% if forloop.first %}
+			<a href="./">{{ l.name }}</a> &raquo;
+		{% else %}
+			{% if forloop.last %}
+				{{ l.name }}
+			{% else %}
+				<a href="javascript:void(0)" onclick="drill(this, '{{ l.pk }}'"> {{ l.name }}</a> &raquo;
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+	<br/>
+	<br/>
+	{{ block.super }}
+{% endblock partial_base_content %}

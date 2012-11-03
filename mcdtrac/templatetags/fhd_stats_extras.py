@@ -26,8 +26,21 @@ def get_parent(location_id):
         location = Location.tree.root_nodes()[0]
     return location
 
-def breadcrumb(location):
-    toret = list(location.get_ancestors())
+def breadcrumb(location, root_id=None):
+    if root_id == None:
+        root = Location.tree.root_nodes()[0]
+    else:
+        try:
+            root_id = int(root_id)
+        except:
+            root = Location.tree.root_nodes()[0]
+        else:
+            root = get_object_or_404(Location, pk=root_id)
+    toret = []
+    for crumb in location.get_ancestors(ascending=True):
+        toret.insert(0, crumb)
+        if crumb == root:
+            break
     toret.append(location)
     return toret
 
@@ -38,12 +51,21 @@ def get_parentId(location_id):
         location = Location.tree.root_nodes()[0]
     return location.parent_id
 
-def get_ancestors(location_id):
+def get_ancestors(location_id, root_id=None):
     if location_id:
         location = get_object_or_404(Location, pk=location_id)
     else:
         location = Location.tree.root_nodes()[0]
-    return location.get_ancestors()
+    if root_id:
+        root = get_object_or_404(Location, pk=root_id)
+    else:
+        root = Location.tree.root_nodes()[0]
+    ancestors = []
+    for a in location.get_ancestors(ascending=True):
+        ancestors.insert(0, a)
+        if a == root:
+            break
+    return ancestors
 
 def get_district(location):
     try:
