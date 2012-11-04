@@ -267,9 +267,9 @@ WHERE f.dpt_male IS NOT NULL
 ---
 --- INDEXES
 ---
-CREATE INDEX ON fhd_stats_mview (created);
-CREATE INDEX ON fhd_stats_mview (has_errors);
-CREATE INDEX ON fhd_stats_mview (lft);
-CREATE INDEX ON fhd_stats_mview (reporting_location_id);
-CREATE INDEX ON fhd_stats_mview (rght);
-CREATE INDEX ON fhd_stats_mview (submission_id);
+CREATE INDEX fhd_stats_mview_created_idx ON fhd_stats_mview (created);
+CREATE INDEX fhd_stats_mview_has_errors_idx ON fhd_stats_mview (has_errors);
+CREATE INDEX fhd_stats_mview_lft_idx ON fhd_stats_mview (lft);
+CREATE INDEX fhd_stats_mview_reporting_location_id_idx ON fhd_stats_mview (reporting_location_id);
+CREATE INDEX fhd_stats_mview_rght_idx ON fhd_stats_mview (rght);
+CREATE INDEX fhd_stats_mview_submission_id_idx ON fhd_stats_mview (submission_id);
