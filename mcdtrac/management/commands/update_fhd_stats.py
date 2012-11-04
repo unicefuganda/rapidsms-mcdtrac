@@ -76,16 +76,16 @@ WHERE f.dpt_male IS NOT NULL
 				verbose = True
 
 		if not quiet:
-			self.stdout.write('truncating and reloading fhd_stats_mview...\n')
+			self.stdout.write(':: truncating and reloading fhd_stats_mview...\n')
 		#self.stderr.write(pp.pformat(options) + '\n') # debug
 		#truncate
 		if verbose:
-			self.stdout.write('=> ' + truncate_sql + ' []\n')
+			self.stdout.write('   = ' + truncate_sql + ' []\n')
 		cursor.execute(truncate_sql)
 		#insert
 		if verbose:
-			self.stdout.write('=> ' + insert_sql + ' []\n')
+			self.stdout.write('   = ' + insert_sql + ' []\n')
 		cursor.execute(insert_sql)
 		transaction.commit_unless_managed()
 		if not quiet:
-			self.stdout.write('succesfully updated fhd_stats_mview\n')
+			self.stdout.write(':: succesfully updated fhd_stats_mview\n')
