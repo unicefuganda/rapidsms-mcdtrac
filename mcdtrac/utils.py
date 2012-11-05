@@ -10,7 +10,10 @@ from rapidsms.models import Contact
 from django.db.models import Count, Max, Min
 from uganda_common.utils import *
 from rapidsms_httprouter.models import Message
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from orderddict import OrderedDict
 
 try:
     if not XFORMS:
