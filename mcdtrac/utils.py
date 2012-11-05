@@ -13,7 +13,7 @@ from rapidsms_httprouter.models import Message
 try:
     from collections import OrderedDict
 except ImportError:
-    from orderddict import OrderedDict
+    from ordereddict import OrderedDict
 
 try:
     if not XFORMS:
