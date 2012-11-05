@@ -3,16 +3,15 @@ from django.db import connection, transaction
 import pprint
 
 class Command(BaseCommand):
-	"""update FHD materialized view"""
-	args = ''
-	help = 'Updates the FHD materialzed view in the table "fhd_stats_mview".'
+    """update FHD materialized view"""
+    args = ''
+    help = 'Updates the FHD materialzed view in the table "fhd_stats_mview".'
 
-	def handle(self, *args, **options):
-		cursor = connection.cursor()
-		pp = pprint.PrettyPrinter(indent=4) # debug
-		truncate_sql='TRUNCATE TABLE fhd_stats_mview'
-		insert_sql="""
-INSERT INTO fhd_stats_mview
+    def handle(self, *args, **options):
+        cursor = connection.cursor()
+        pp = pprint.PrettyPrinter(indent=4) # debug
+        truncate_sql='TRUNCATE TABLE fhd_stats_mview'
+        insert_sql="""INSERT INTO fhd_stats_mview
 SELECT f.value_id,
        f.submission_id,
        f.created,
@@ -67,25 +66,25 @@ WHERE f.dpt_male IS NOT NULL
   OR f.breg_female IS NOT NULL
   OR f.expected_pows IS NOT NULL
   OR f.reached_pows IS NOT NULL"""
-		verbose = False
-		quiet = False
-		if 'verbosity' in options:
-			if options['verbosity'] == '0':
-				quiet = True
-			if options['verbosity'] == '2':
-				verbose = True
+        verbose = False
+        quiet = False
+        if 'verbosity' in options:
+            if options['verbosity'] == '0':
+                quiet = True
+            if options['verbosity'] == '2':
+                verbose = True
 
-		if not quiet:
-			self.stdout.write(':: truncating and reloading fhd_stats_mview...\n')
-		#self.stderr.write(pp.pformat(options) + '\n') # debug
-		#truncate
-		if verbose:
-			self.stdout.write('   = ' + truncate_sql + ' []\n')
-		cursor.execute(truncate_sql)
-		#insert
-		if verbose:
-			self.stdout.write('   = ' + insert_sql + ' []\n')
-		cursor.execute(insert_sql)
-		transaction.commit_unless_managed()
-		if not quiet:
-			self.stdout.write(':: succesfully updated fhd_stats_mview\n')
+        if not quiet:
+            self.stdout.write(':: truncating and reloading fhd_stats_mview...\n')
+        #self.stderr.write(pp.pformat(options) + '\n') # debug
+        #truncate
+        if verbose:
+            self.stdout.write('   = ' + truncate_sql + ' []\n')
+        cursor.execute(truncate_sql)
+        #insert
+        if verbose:
+            self.stdout.write('   = ' + insert_sql + ' []\n')
+        cursor.execute(insert_sql)
+        transaction.commit_unless_managed()
+        if not quiet:
+            self.stdout.write(':: succesfully updated fhd_stats_mview\n')
