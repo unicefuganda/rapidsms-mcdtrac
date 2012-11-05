@@ -10,6 +10,7 @@ from rapidsms.models import Contact
 from django.db.models import Count, Max, Min
 from uganda_common.utils import *
 from rapidsms_httprouter.models import Message
+from collections import OrderedDict
 
 try:
     if not XFORMS:
@@ -78,6 +79,14 @@ def fhd_get_xform_dates(request):
         last_reporting_period(period=1, weekday=0, offset=dates['max'])[1] - datetime.timedelta(days=1)
     )
     return dates
+
+def dictfetchall(cursor):
+    "Returns all rows from a cursor as a dict"
+    desc = cursor.description
+    return [
+        OrderedDict(zip([col[0] for col in desc], row))
+        for row in cursor.fetchall()
+    ]
 
 def total_facilities(location, count=True):
     """
