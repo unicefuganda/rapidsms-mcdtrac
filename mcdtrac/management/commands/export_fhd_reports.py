@@ -30,8 +30,8 @@ class Command(BaseCommand):
             '01'
         ).date()
         quarter = 'Q' + str((datetime.date.today().month - 1)//3 + 1) + str(datetime.date.today().year)
-        #xls_dir = '/tmp'
         xls_dir = '/var/www/prod/mtrack/mtrack_project/rapidsms_mcdtrac/mcdtrac/static/spreadsheets/'
+        #xls_dir = '/tmp/'
         xls_fpath = xls_dir + 'fhd_stats' + quarter + '.xlsx'
         grouped_sql="""SELECT l.name AS "District",
        COUNT(f.dpt_male) AS "Entries",
@@ -79,7 +79,7 @@ GROUP BY l.lft,
         individual_sql="""SELECT f.submission_id,
        f.created::date AS "Date",
        l.name AS district,
-
+       f.facility AS facility,
     (SELECT ll.name
      FROM locations_location ll
      WHERE f.reporting_location_id = ll.id) AS "reporting location",

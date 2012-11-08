@@ -11,6 +11,13 @@ SELECT "rapidsms_xforms_xformsubmissionvalue"."value_ptr_id" AS value_id,
    WHERE "rapidsms_contact"."id" = "rapidsms_connection"."contact_id") AS reporting_name,
        "rapidsms_connection"."identity" AS phone,
 
+  (SELECT "HF"."name"
+   FROM "healthmodels_healthfacilitybase" AS "HF"
+   WHERE "HF"."id" =
+       (SELECT "HB"."facility_id"
+        FROM "healthmodels_healthproviderbase" AS "HB"
+        WHERE "HB"."contact_ptr_id" = "rapidsms_connection"."contact_id")) AS facility,
+
   (SELECT "locations_location"."lft"
    FROM "locations_location"
    LEFT JOIN "rapidsms_contact" ON "locations_location"."id" = "rapidsms_contact"."reporting_location_id"
@@ -206,6 +213,7 @@ FROM "rapidsms_xforms_xformsubmissionvalue"
 INNER JOIN "rapidsms_xforms_xformsubmission" ON "rapidsms_xforms_xformsubmissionvalue"."submission_id" = "rapidsms_xforms_xformsubmission"."id"
 INNER JOIN "rapidsms_connection" ON "rapidsms_xforms_xformsubmission"."connection_id" = "rapidsms_connection"."id"
 WHERE "rapidsms_connection"."contact_id" IS NOT NULL;
+
 --
 -- fake a materialized view
 --
@@ -216,6 +224,7 @@ SELECT f.value_id,
        f.has_errors,
        f.reporting_name,
        f.phone,
+       f.facility,
        f.lft,
        f.reporting_location_id,
        f.rght,
