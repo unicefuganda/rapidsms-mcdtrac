@@ -1,39 +1,82 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
-#from django.conf import settings
+from django.conf import settings
 import pprint
 import datetime
 import dateutil
 import openpyxl
-#from openpyxl import Workbook, style
-#from openpyxl.cell import Cell
-from mcdtrac.utils import dictfetchall
+import os.path
+from mcdtrac.utils import dictfetchall, XLS_DIR
 
 class Command(BaseCommand):
     """export excels of the latest week/quarterly report"""
     help = 'Creates quarterly/weekly spreadsheets for download.'
+    pp = pprint.PrettyPrinter(indent=4)  # debug
+    base_width = 10.47
+
+    def populate_worksheet(self, ws=None, title='', sql_list=[], col_widths={}):
+
+        if not (ws and title and sql_list):
+            raise CommandError('Got incomplete arguments')
+
+        cursor = connection.cursor()
+        ws.title = title
+        ws.show_gridlines = False  # doesn't seem to work
+        sql_str = sql_list.pop(0)
+
+        cursor.execute(sql_str, sql_list)
+        headers = [col[0] for col in cursor.description]
+        rows = dictfetchall(cursor)
+        transaction.commit_unless_managed()
+
+        col = 0
+        row = 0
+        for h in headers:
+            cell = ws.cell(row=row, column=col)
+            cell.value = h
+            col += 1
+
+        col = 0
+        row = 1
+        for r in rows:
+            for key in r:
+                ws.cell(row=row, column=col).value = r[key]
+                col += 1
+            row += 1
+            col = 0
+
+        ws.row_dimensions[1].height = 42.0
+        for c in ws.column_dimensions:
+            ws.column_dimensions[c].width = self.base_width
+
+        if col_widths:
+            for c in col_widths:
+                ws.column_dimensions[c].width = col_widths[c]
+
+        for cell in ws.rows[0]:
+            cell.style.alignment.vertical = openpyxl.style.Alignment.VERTICAL_TOP
+            cell.style.alignment.wrap_text = True
+            cell.style.font.bold = True
+            cell.style.fill.fill_type = openpyxl.style.Fill.FILL_SOLID
+            cell.style.fill.start_color.index = 'FFE6E6E6'
+            #todo: add borders
+        return ws
 
     def handle(self, *args, **options):
         wb = openpyxl.Workbook()
-        ws1 = wb.get_active_sheet()
-        ws1.show_gridlines = False;
-        ws1.title = "District Summaries"
-        ws2 = wb.create_sheet()
-        ws2.title = "Individual Entries"
-
-        cursor = connection.cursor()
-        pp = pprint.PrettyPrinter(indent=4) # debug
         quarter_months = ['01', '04', '07', '10']
         quarter_start = dateutil.parser.parse(
             str(datetime.date.today().year) + '-' +
-            str(quarter_months[(datetime.date.today().month - 1)//3]) + '-' +
+            str(quarter_months[(datetime.date.today().month - 1) // 3]) + '-' +
             '01'
         ).date()
-        quarter = 'Q' + str((datetime.date.today().month - 1)//3 + 1) + str(datetime.date.today().year)
-        xls_dir = '/var/www/prod/mtrack/mtrack_project/rapidsms_mcdtrac/mcdtrac/static/spreadsheets/'
-        #xls_dir = '/tmp/'
-        xls_fpath = xls_dir + 'fhd_stats' + quarter + '.xlsx'
-        grouped_sql="""SELECT l.name AS "District",
+        quarter = str(datetime.date.today().year) + '_Q' + str((datetime.date.today().month - 1) // 3 + 1)
+        xls_fpath = os.path.join(settings.MTRACK_ROOT, XLS_DIR, 'fhd_stats-' + quarter + '.xlsx')
+        if settings.DEBUG:
+            self.stdout.write(
+                'DEBUG: Writing spreadsheet to: "{0}"\n'.format(xls_fpath)
+            )
+        grouped_sql = """SELECT l.name AS "District",
        COUNT(f.dpt_male) AS "Entries",
        SUM(dpt_male) AS "DPT (M)",
        SUM(dpt_female) AS "DPT (F)",
@@ -76,7 +119,7 @@ GROUP BY l.lft,
          l.name,
          l.rght"""
 
-        individual_sql="""SELECT f.submission_id,
+        individual_sql = """SELECT f.submission_id,
        f.created::date AS "Date",
        l.name AS district,
        f.facility AS facility,
@@ -122,56 +165,25 @@ WHERE f.created <= now()
                 AND "locations_location"."type_id" = E'district'))
         """
 
-        self.stdout.write(':: generating district summaries.')
-        cursor.execute(grouped_sql, [quarter_start])
-        headers = [col[0] for col in cursor.description]
-        rows = dictfetchall(cursor)
-        transaction.commit_unless_managed()
-        col = 0 ; row = 0
-        for h in headers:
-            cell = ws1.cell(row = row, column = col)
-            cell.value = h
-
-            col += 1
-        #ws.row_dimensions[1].height = ??
-        col = 0 ; row = 1
-        for r in rows:
-            for key in r:
-                ws1.cell(row = row, column = col).value = r[key]
-                col += 1
-            row += 1 ; col = 0
-
-        ws1.row_dimensions[1].height = 42.0
-        for c in ws1.column_dimensions:
-            ws1.column_dimensions[c].width = 10.47
-
-        # for c in ws1.rows[0]:
-        #     c.style.wrap_text = True
-        #     c.style.alignment.vertical = openpyxl.style.Alignment.VERTICAL_TOP
-        #     c.style.alignment.horizontal = openpyxl.style.Alignment.HORIZONTAL_CENTER
-        #     c.style.fill.fill_type = openpyxl.style.Fill.FILL_SOLID
-        #     c.style.fill.start_color.index = 'e6e6e6'
-        #     c.style.borders.all_borders.border_style = openpyxl.style.Border.BORDER_MEDIUM
-        self.stdout.write(':: generating individual entries.')
-        cursor.execute(individual_sql, [quarter_start])
-        headers = [col[0] for col in cursor.description]
-        rows = dictfetchall(cursor)
-        transaction.commit_unless_managed()
-        col = 0 ; row = 0
-        for h in headers:
-            cell = ws2.cell(row = row, column = col)
-            cell.value = h
-            col += 1
-        col = 0 ; row = 1
-        for r in rows:
-            for key in r:
-                ws2.cell(row = row, column = col).value = r[key]
-                col += 1
-            row += 1 ; col = 0
-
-        ws2.row_dimensions[1].height = 42.0
-        for c in ws2.column_dimensions:
-            ws2.column_dimensions[c].width = 10.47
-
+        self.stdout.write(':: generating district summaries.\n')
+        self.populate_worksheet(
+            ws=wb.get_active_sheet(),
+            title="District Summaries",
+            sql_list=[grouped_sql, quarter_start])
+        self.stdout.write(':: generating individual entries.\n')
+        self.populate_worksheet(
+            ws=wb.create_sheet(),
+            title="Individual Entries",
+            sql_list=[individual_sql, quarter_start],
+            col_widths={
+                'A': self.base_width * 1.5,
+                'D': self.base_width * 1.5,
+                'E': self.base_width * 2,
+                'F': self.base_width * 3
+            })
+        if settings.DEBUG:
+            self.stdout.write(
+                    'DEBUG: Workbook is: ' +
+                    self.pp.pformat(wb.worksheets) + '\n'
+                )
         wb.save(xls_fpath)
-

@@ -21,6 +21,8 @@ try:
 except NameError:
     XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
 
+XLS_DIR = getattr(settings, 'FHD_XLS_DIRECTORY', 'rapidsms_mcdtrac/mcdtrac/static/spreadsheets/')
+
 def last_reporting_period(period=1, weekday=getattr(settings, 'FIRSTDAY_OF_REPORTING_WEEK', 3), todate=False, offset=None):
     """
     Find a date range that spans from the most recent Wednesday (exactly a week ago if
