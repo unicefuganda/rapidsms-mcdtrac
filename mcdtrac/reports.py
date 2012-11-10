@@ -1,17 +1,17 @@
 from django.conf import settings
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
+from django.db import connection, transaction
 from generic.reports import Column, Report
 from generic.utils import flatten_list
 from rapidsms.contrib.locations.models import Location
 from rapidsms_httprouter.models import Message
-from django.db.models import Q
 from script.models import Script
 from rapidsms_xforms.models import XFormSubmissionValue, XForm, XFormSubmission
 from uganda_common.reports import XFormSubmissionColumn, XFormAttributeColumn, PollNumericResultsColumn, PollCategoryResultsColumn, LocationReport, QuotientColumn, InverseQuotientColumn
 from uganda_common.utils import total_submissions, reorganize_location, total_attribute_value, previous_calendar_month
 from uganda_common.utils import reorganize_dictionary
 from poll.models import Response, Poll
-from .utils import previous_calendar_week, get_location_for_user
+from .utils import previous_calendar_week, get_location_for_user, dictfetchall
 import datetime
 from django.db.models.sql.constants import *
 
@@ -22,8 +22,47 @@ class FHDMixin(object):
     """
     Mixins for Column objects bellow for similar functionality.
 
-    TODO: merge with the FHDReportColumn since we only have one type of Column
     """
+    def materialized_attribute_by_location(self, report, keyword, single_week=False):
+        start_date = report.start_date
+        end_date = report.end_date
+        cursor = connection.cursor()
+        if single_week:
+            start_date = end_date - datetime.timedelta(7)
+
+        if report.location.get_children().count() > 1:
+            location_children_where = 'l.id in {0}'.format(
+                str(tuple(
+                    report.location.get_children().values_list('pk', flat=True)
+                ))
+            )
+        else:
+            location_children_where = 'l.id in {0}'.format(
+                    report.location.get_children()[0].pk
+            )
+
+        sql = """SELECT SUM("{0}") AS value,
+       l.lft,
+       l.id AS location_id,
+       l.name AS location_name,
+       l.rght
+FROM fhd_stats_mview f,
+     locations_location l
+WHERE f.has_errors = FALSE
+    AND f.created >= %s
+    AND f.created <= %s
+    AND l.lft <= f.lft
+    AND l.rght >= f.rght
+    AND {1}
+GROUP BY l.lft,
+         l.id,
+         l.name,
+         l.rght""".format(keyword, location_children_where)
+        cursor.execute(
+            sql, [start_date, end_date])
+        rows = dictfetchall(cursor)
+        transaction.commit_unless_managed()
+        return rows
 
     def total_attribute_by_location(self, report, keyword, single_week=False):
         #print report.location  # debug
@@ -113,6 +152,20 @@ class FHDReportColumn(Column, FHDMixin):
         # reorganize_dictionary(key, val, dictionary, 'location_id', 'location_name', 'value')
         reorganize_location(key, val, dictionary)
 
+class FHDReportMaterializedCol(Column, FHDMixin):
+    """
+    Pick a single value for a column in the fhd_stats_mview table
+    """
+
+    def __init__(self, keyword, location=None, extra_filters=None):
+        if type(keyword) in [list, tuple]:
+            keyword = keyword[0]
+        self.keyword = keyword
+        self.extra_filters = extra_filters
+
+    def add_to_report(self, report, key, dictionary):
+        val = self.materialized_attribute_by_location(report, self.keyword)
+        reorganize_location(key, val, dictionary)
 
 class FHDReportBase(Report):
 
@@ -152,12 +205,34 @@ class FHDReport(FHDReportBase):
     worm_male = FHDReportColumn(['worm_male'])
     worm_female = FHDReportColumn(['worm_female'])
     redm_number = FHDReportColumn(['redm_number'])
-    tet_dose2 = FHDReportColumn(['test_dose2'])
-    tet_dose3 = FHDReportColumn(['test_dose3'])
-    tet_dose4 = FHDReportColumn(['test_dose4'])
-    tet_dose5 = FHDReportColumn(['test_dose5'])
+    tet_dose2 = FHDReportColumn(['tet_dose2'])
+    tet_dose3 = FHDReportColumn(['tet_dose3'])
+    tet_dose4 = FHDReportColumn(['tet_dose4'])
+    tet_dose5 = FHDReportColumn(['tet_dose5'])
     anc_number = FHDReportColumn(['anc_number'])
     eid_male = FHDReportColumn(['eid_male'])
     eid_female = FHDReportColumn(['eid_female'])
     breg_male = FHDReportColumn(['breg_male'])
     breg_female = FHDReportColumn(['breg_female'])
+
+class FHDMaterializedReport(FHDReportBase):
+    dpt_male = FHDReportMaterializedCol('dpt_male')
+    dpt_female = FHDReportMaterializedCol('dpt_female')
+    vacm_male = FHDReportMaterializedCol('vacm_male')
+    vacm_female = FHDReportMaterializedCol('vacm_female')
+    vita_male1 = FHDReportMaterializedCol('vita_male1')
+    vita_female1 = FHDReportMaterializedCol('vita_female1')
+    vita_male2 = FHDReportMaterializedCol('vita_male2')
+    vita_female2 = FHDReportMaterializedCol('vita_female2')
+    worm_male = FHDReportMaterializedCol('worm_male')
+    worm_female = FHDReportMaterializedCol('worm_female')
+    redm_number = FHDReportMaterializedCol('redm_number')
+    tet_dose2 = FHDReportMaterializedCol('tet_dose2')
+    tet_dose3 = FHDReportMaterializedCol('tet_dose3')
+    tet_dose4 = FHDReportMaterializedCol('tet_dose4')
+    tet_dose5 = FHDReportMaterializedCol('tet_dose5')
+    anc_number = FHDReportMaterializedCol('anc_number')
+    eid_male = FHDReportMaterializedCol('eid_male')
+    eid_female = FHDReportMaterializedCol('eid_female')
+    breg_male = FHDReportMaterializedCol('breg_male')
+    breg_female = FHDReportMaterializedCol('breg_female')
