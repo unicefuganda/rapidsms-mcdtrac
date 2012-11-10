@@ -10,7 +10,7 @@ from .utils import *
 from .views import view_submissions, mcd_dashboard, mcdtrac_xforms, submissions_as_csv
 from .sorters import LatestSubmissionSorter
 from django.views.generic.simple import direct_to_template
-from .reports import FHDReport
+from .reports import FHDReport, FHDMaterializedReport
 
 urlpatterns = patterns('',
     url(r'^mcdtrac/demo$', login_required(mcd_dashboard), name='mcds'),
@@ -23,7 +23,7 @@ urlpatterns = patterns('',
     url(r"^mcdtrac/(?P<pk>\d+)/submissions.csv$", login_required(submissions_as_csv), name='mcd-excel'),
     url(r'^mcdtrac/fhdstats/$', login_required(generic), {
         'model':XFormSubmission,
-        'queryset':FHDReport,
+        'queryset':FHDMaterializedReport,
         'selectable':False,
         'paginated':False,
         'results_title':None,
