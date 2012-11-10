@@ -160,7 +160,7 @@ class FHDReportMaterializedCol(Column, FHDMixin):
     def __init__(self, keyword, location=None, extra_filters=None):
         if type(keyword) in [list, tuple]:
             keyword = keyword[0]
-        self.keyword = keyword.replace('"', '')
+        self.keyword = str(keyword).replace('"', '')
         self.extra_filters = extra_filters
 
     def add_to_report(self, report, key, dictionary):
