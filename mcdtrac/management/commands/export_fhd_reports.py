@@ -14,6 +14,33 @@ class Command(BaseCommand):
     pp = pprint.PrettyPrinter(indent=4)  # debug
     base_width = 10.47
 
+    def get_districts():
+        cursor = connection.cursor()
+        sql = """SELECT l.lft,
+       l.id,
+       l.name AS District ,
+       l.rght
+FROM fhd_stats_mview f ,
+     locations_location l
+WHERE f.has_errors = FALSE
+    AND l.lft <= f.lft
+    AND l.rght >= f.rght
+    AND l.id IN
+        (SELECT "locations_location"."id"
+         FROM "locations_location"
+         WHERE ("locations_location"."lft" <= 15257
+                AND "locations_location"."lft" >= 2
+                AND "locations_location"."tree_id" = 1
+                AND "locations_location"."type_id" = E'district'))
+GROUP BY l.lft,
+         l.id,
+         l.name,
+         l.rght"""
+        cursor.execute(sql)
+        rows = dictfetchall(cursor)
+        transaction.commit_unless_managed()
+        return rows
+
     def populate_worksheet(self, ws=None, title='', sql_list=[], col_widths={}):
 
         if not (ws and title and sql_list):
