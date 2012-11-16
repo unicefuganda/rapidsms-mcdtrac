@@ -7,12 +7,25 @@ import dateutil
 import openpyxl
 import os
 from mcdtrac.utils import dictfetchall, XLS_DIR
+from optparse import make_option
 
 class Command(BaseCommand):
     """export excels of the latest week/quarterly report"""
     help = 'Creates quarterly/weekly spreadsheets for download.'
     pp = pprint.PrettyPrinter(indent=4)  # debug
     base_width = 10.47
+    debug_fhd = False
+
+    option_list = BaseCommand.option_list + (
+            make_option(
+                '-d',
+                '--debug',
+                action='store_true',
+                dest='debug_fhd',
+                default=False,
+                help='Debug FHD CMD'
+            ),
+        )
 
     def get_districts(self):
         """rows of district objects with FHD data."""
@@ -196,6 +209,9 @@ class Command(BaseCommand):
         return ws
 
     def handle(self, *args, **options):
+        self.debug_fhd = options['debug_fhd']
+        if self.debug_fhd:
+            self.stdout.write(self.pp.pformat(options))
         wb = openpyxl.Workbook()
         quarter_months = ['01', '04', '07', '10']
         quarter_start = dateutil.parser.parse(
@@ -207,9 +223,12 @@ class Command(BaseCommand):
         y_str = str(datetime.date.today().year)
         quarter = y_str + '_' + q_str
         xls_fdir = os.path.join(settings.MTRACK_ROOT, XLS_DIR, 'uganda/{0}/{1}'.format(y_str, str.lower(q_str)))
-        os.makedirs(xls_fdir)
+        try:
+            os.makedirs(xls_fdir)
+        except OSError:
+            pass
         xls_fpath = os.path.join(xls_fdir, 'fhd_stats-' + quarter + '.xlsx')
-        if settings.DEBUG:
+        if self.debug_fhd:
             self.stdout.write(
                 'DEBUG: Writing spreadsheet to: "{0}"\n'.format(xls_fpath)
             )
@@ -230,7 +249,7 @@ class Command(BaseCommand):
                 'E': self.base_width * 2,
                 'F': self.base_width * 3
             })
-        if settings.DEBUG:
+        if self.debug_fhd:
             self.stdout.write(
                     'DEBUG: Workbook is: ' +
                     self.pp.pformat(wb.worksheets) + '\n'
