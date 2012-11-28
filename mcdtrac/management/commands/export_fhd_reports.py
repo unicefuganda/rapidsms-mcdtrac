@@ -8,23 +8,50 @@ import openpyxl
 import os
 from mcdtrac.utils import dictfetchall, XLS_DIR
 from optparse import make_option
+from rapidsms.contrib.locations.models import Location
 
 class Command(BaseCommand):
     """export excels of the latest week/quarterly report"""
     help = 'Creates quarterly/weekly spreadsheets for download.'
     pp = pprint.PrettyPrinter(indent=4)  # debug
     base_width = 10.47
+    individual_col_widths = {
+                'A': base_width * 1.5,
+                'D': base_width * 1.5,
+                'E': base_width * 2,
+                'F': base_width * 3
+    }
+    # optparse class variables
     debug_fhd = False
+    fhd_districts = []
+    start_date = None
+    end_date = None
+    custom_range = False
 
     option_list = BaseCommand.option_list + (
             make_option(
-                '-d',
                 '--debug',
                 action='store_true',
                 dest='debug_fhd',
                 default=False,
                 help='Debug FHD CMD'
             ),
+            make_option(
+                '-d',
+                '--district',
+                action='append',
+                help='Add this district to the list of districts to export.'
+            ),
+            make_option(
+                '-s',
+                '--start-date',
+                help='Collect data starting on this date. Default: start of this quarter.'
+            ),
+            make_option(
+                '-e',
+                '--end-date',
+                help='Collect data ending on this date. Default: today.'
+            )
         )
 
     def get_districts(self):
@@ -54,6 +81,25 @@ class Command(BaseCommand):
         rows = dictfetchall(cursor)
         transaction.commit_unless_managed()
         return rows
+
+    def get_district_by_name(self, district):
+        """parse command line district name into a dict"""
+        try:
+            d = Location.tree.root_nodes(
+                )[0].get_descendants(
+                ).get(
+                    type='district',
+                    name__iexact=district
+                )
+        except Exception, e:
+            raise CommandError('District "{0}" returned error: {1}'.format(district, e))
+        else:
+            return {
+                'lft': d.lft,
+                'id': d.id,
+                'name': d.name,
+                'rght': d.rght
+            }
 
     def generate_sql(self, district_level=False, district_id=None):
         """
@@ -109,8 +155,8 @@ class Command(BaseCommand):
             FROM fhd_stats_mview f,
                  locations_location l
             WHERE f.has_errors = FALSE
-                AND f.created <= now()
                 AND f.created >= %s
+                AND f.created <= %s
                 AND l.lft <= f.lft
                 AND l.rght >= f.rght
                 AND {1}
@@ -152,8 +198,8 @@ class Command(BaseCommand):
                    f.reached_pows AS "Reached POWs"
             FROM fhd_stats_mview f ,
                  locations_location l
-            WHERE f.created <= now()
-                AND f.created >= %s
+            WHERE f.created >= %s
+                AND f.created <= %s
                 AND l.lft <= f.lft
                 AND l.rght >= f.rght
                 AND {0}""".format(sql_id)
@@ -208,47 +254,121 @@ class Command(BaseCommand):
             #todo: add borders
         return ws
 
+    def generate_fpath(self, subdir='.'):
+        q_str = 'Q' + str((self.start_date.month - 1) // 3 + 1)
+        y_str = str(self.start_date.year)
+
+        if self.custom_range:
+            xls_fname = 'fhd_stats_{0}_{1}'.format(
+                self.start_date.strftime('%F'),
+                self.end_date.strftime('%F'))
+        else:
+            xls_fname = 'fhd_stats-{0}_{1}.xlsx'.format(y_str, q_str)
+
+        xls_fpath = os.path.join(
+            settings.MTRACK_ROOT,
+            XLS_DIR,
+            '{0}/{1}/{2}'.format(subdir.lower(), y_str, q_str.lower()),
+            xls_fname
+        )
+        return os.path.abspath(xls_fpath)
+
     def handle(self, *args, **options):
+        # TODO: add function to create xls fpath based on district name
+        # or 'uganda' for country level xls.
         self.debug_fhd = options['debug_fhd']
-        if self.debug_fhd:
-            self.stdout.write(self.pp.pformat(options))
-        wb = openpyxl.Workbook()
         quarter_months = ['01', '04', '07', '10']
-        quarter_start = dateutil.parser.parse(
-            str(datetime.date.today().year) + '-' +
-            str(quarter_months[(datetime.date.today().month - 1) // 3]) + '-' +
-            '01'
-        ).date()
-        q_str = 'Q' + str((datetime.date.today().month - 1) // 3 + 1)
-        y_str = str(datetime.date.today().year)
-        quarter = y_str + '_' + q_str
-        xls_fdir = os.path.join(settings.MTRACK_ROOT, XLS_DIR, 'uganda/{0}/{1}'.format(y_str, str.lower(q_str)))
+
+        if self.debug_fhd:
+            self.stdout.write('got options: ' + self.pp.pformat(options) + '\n')
+
+        if options['start_date']:
+            self.custom_range = True
+            self.start_date = dateutil.parser.parse(options['start_date']).date()
+        else:
+            self.start_date = dateutil.parser.parse(
+                str(datetime.date.today().year) + '-' +
+                str(quarter_months[(datetime.date.today().month - 1) // 3]) + '-' +
+                '01'
+            ).date()
+
+        if options['end_date']:
+            self.custom_range = True
+            self.end_date = dateutil.parser.parse(options['end_date']).date()
+        else:
+            self.end_date = datetime.date.today()
+
+        if options['district']:
+            for d in options['district']:
+                self.fhd_districts.append(self.get_district_by_name(d))
+        else:
+            self.fhd_districts = self.get_districts()
+
+        if self.debug_fhd:
+            self.stdout.write(
+                'DEBUG: doing districts: ' +
+                self.pp.pformat(self.fhd_districts) +
+                '\n')
+
+        for fhd_dist in self.fhd_districts:
+            wb = openpyxl.Workbook()
+            xls_fpath = self.generate_fpath(fhd_dist['district'])
+            try:
+                os.makedirs(os.path.dirname(xls_fpath))
+            except OSError:
+                pass
+            if self.debug_fhd:
+                self.stdout.write(
+                    'DEBUG: Writing spreadsheet to: "{0}"\n'.format(xls_fpath)
+                )
+            grouped_sql, individual_sql = self.generate_sql(
+                                            district_level=True,
+                                            district_id = fhd_dist['id'])
+            self.stdout.write(':: district entries for {0}\n'.format(
+                                fhd_dist['district']))
+            self.populate_worksheet(
+                ws=wb.get_active_sheet(),
+                title="Facility Summaries",
+                sql_list=[grouped_sql, self.start_date, self.end_date]
+            )
+            self.stdout.write(':: individual entries for {0}\n'.format(
+                                fhd_dist['district']))
+            self.populate_worksheet(
+                ws=wb.create_sheet(),
+                title="Individual Enetries",
+                sql_list=[individual_sql, self.start_date, self.end_date],
+                col_widths=self.individual_col_widths
+            )
+            if self.debug_fhd:
+                self.stdout.write(
+                    'DEBUG: Workbook is: ' +
+                    self.pp.pformat(wb.worksheets) + '\n')
+
+            wb.save(xls_fpath)
+
+        wb = openpyxl.Workbook()
+        xls_fpath = self.generate_fpath('uganda')
+
         try:
-            os.makedirs(xls_fdir)
+            os.makedirs(os.path.dirname(xls_fpath))
         except OSError:
             pass
-        xls_fpath = os.path.join(xls_fdir, 'fhd_stats-' + quarter + '.xlsx')
         if self.debug_fhd:
             self.stdout.write(
                 'DEBUG: Writing spreadsheet to: "{0}"\n'.format(xls_fpath)
             )
         grouped_sql, individual_sql = self.generate_sql()
-        self.stdout.write(':: generating district summaries.\n')
+        self.stdout.write(':: Generating country level district summaries.\n')
         self.populate_worksheet(
             ws=wb.get_active_sheet(),
             title="District Summaries",
-            sql_list=[grouped_sql, quarter_start])
-        self.stdout.write(':: generating individual entries.\n')
+            sql_list=[grouped_sql, self.start_date, self.end_date])
+        self.stdout.write(':: Generating country level individual entries.\n')
         self.populate_worksheet(
             ws=wb.create_sheet(),
             title="Individual Entries",
-            sql_list=[individual_sql, quarter_start],
-            col_widths={
-                'A': self.base_width * 1.5,
-                'D': self.base_width * 1.5,
-                'E': self.base_width * 2,
-                'F': self.base_width * 3
-            })
+            sql_list=[individual_sql, self.start_date, self.end_date],
+            col_widths=self.individual_col_widths)
         if self.debug_fhd:
             self.stdout.write(
                     'DEBUG: Workbook is: ' +
