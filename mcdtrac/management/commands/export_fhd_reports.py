@@ -254,16 +254,22 @@ class Command(BaseCommand):
             #todo: add borders
         return ws
 
-    def generate_fpath(self, subdir='.'):
+    def generate_fpath(self, subdir='.', prefix='', suffix=''):
         q_str = 'Q' + str((self.start_date.month - 1) // 3 + 1)
         y_str = str(self.start_date.year)
 
         if self.custom_range:
-            xls_fname = 'fhd_stats_{0}_{1}'.format(
+            xls_fname = '{2}fhd_stats_{0}_{1}{3}.xlsx'.format(
                 self.start_date.strftime('%F'),
-                self.end_date.strftime('%F'))
+                self.end_date.strftime('%F'),
+                prefix.lower(),
+                suffix.lower())
         else:
-            xls_fname = 'fhd_stats-{0}_{1}.xlsx'.format(y_str, q_str)
+            xls_fname = '{2}fhd_stats-{0}_{1}{3}.xlsx'.format(
+                y_str,
+                q_str,
+                prefix.lower(),
+                suffix.lower())
 
         xls_fpath = os.path.join(
             settings.MTRACK_ROOT,
@@ -312,7 +318,9 @@ class Command(BaseCommand):
 
         for fhd_dist in self.fhd_districts:
             wb = openpyxl.Workbook()
-            xls_fpath = self.generate_fpath(fhd_dist['district'])
+            xls_fpath = self.generate_fpath(
+                            fhd_dist['district'],
+                            fhd_dist['district'] + '-')
             try:
                 os.makedirs(os.path.dirname(xls_fpath))
             except OSError:
