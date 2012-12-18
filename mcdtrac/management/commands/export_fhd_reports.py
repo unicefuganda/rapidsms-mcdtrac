@@ -274,7 +274,7 @@ class Command(BaseCommand):
         xls_fpath = os.path.join(
             settings.MTRACK_ROOT,
             XLS_DIR,
-            '{0}/{1}/{2}'.format(subdir.lower(), y_str, q_str.lower()),
+            '{0}/{1}'.format(subdir.lower(), y_str),
             xls_fname
         )
         return os.path.abspath(xls_fpath)
