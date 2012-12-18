@@ -101,22 +101,22 @@ class Command(BaseCommand):
                 'rght': d.rght
             }
 
-    def generate_sql(self, district_level=False, district_id=None):
+    def generate_sql(self, sub_level=False, location_id=None):
         """
         generate SQL used by the handle() below as follows:
 
-        if district_level = False:
+        if sub_level = False:
             generate the strings suitable for a global level worksheets
         else:
-            generate the sql suitable for a particular district specified
-            as the <district_id> option. Raise CommandError if no <district_id>
+            generate the sql suitable for a particular location specified
+            as the <location_id> option. Raise CommandError if no <location_id>
         """
-        if district_level:
-            if not (district_id and isinstance(district_id, (int, long))):
-                raise CommandError("If you want a district give me a district_id")
+        if sub_level:
+            if not (location_id and isinstance(location_id, (int, long))):
+                raise CommandError("If you want a district give me a location_id")
             else:
                 grp_sql_title = 'SELECT f.facility AS "Facility"'
-                sql_id = 'l.id = {0}'.format(int(district_id))
+                sql_id = 'l.id = {0}'.format(int(location_id))
                 grp_sql_name = 'f.facility'
         else:
             grp_sql_title = 'SELECT l.name AS "District"'
@@ -330,8 +330,8 @@ class Command(BaseCommand):
                     'DEBUG: Writing spreadsheet to: "{0}"\n'.format(xls_fpath)
                 )
             grouped_sql, individual_sql = self.generate_sql(
-                                            district_level=True,
-                                            district_id = fhd_dist['id'])
+                                            sub_level=True,
+                                            location_id = fhd_dist['id'])
             self.stdout.write(':: district entries for {0}\n'.format(
                                 fhd_dist['district']))
             self.populate_worksheet(
