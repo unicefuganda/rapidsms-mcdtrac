@@ -10,10 +10,12 @@ from mcdtrac.utils import \
     get_district_for_facility, \
     get_last_reporting_date, \
     get_facility_reports, \
-    reporting_facilities
+    reporting_facilities, \
+    generate_fpath
 import calendar
 import time
 import re
+import os
 
 def get_section(path):
     pos = path.split('/')
@@ -229,14 +231,18 @@ def get_reporting_week_number(d):
     if start_of_year.weekday() != 0:
         toret += 1
     return toret
+# return the last bits of the xls path to generate URLs.
+def get_xls_urlpath(f):
+    return os.path.join(*[os.path.basename(x) for x in os.path.split(os.path.split(f)[0]) ] + [ os.path.basename(f) ])
+
 #return name for user's excel report
 def get_user_report_name(user):
     if user.upper() in ['NMS', 'MU', 'MOH']:
-        return 'reports.xls'
+        return get_xls_urlpath(generate_fpath())
     d = Location.objects.filter(name__iexact=user, type='district')
     if len(d) > 0:
-        return 'reports_%s.xls' % (user.capitalize())
-    return "reports.xls"
+        return get_xls_urlpath(generate_fpath(subdir=user, prefix=user + '-'))
+    return get_xls_urlpath(generate_fpath())
 
 def hc(obj):
     return obj.contact.healthprovider.facility.name

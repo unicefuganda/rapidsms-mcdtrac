@@ -1,8 +1,8 @@
 {% extends "mcdtrac/fhd_dash_base.html" %}
 {% load fhd_stats_extras %}
 {% block content %}
-	{% comment %}
-    <a href="/static/mtrack/spreadsheets/{{ user.username|get_user_report_name:"" }}">Download all reports &raquo;</a>
+    <a href="{{ MEDIA_URL }}mcdtrac/spreadsheets/{{ user.username|get_user_report_name }}">Download Latest report&raquo;</a>
+    {% comment %}
     &nbsp;&nbsp;&nbsp;
     <a href="/static/mtrack/spreadsheets/{{ user.username|get_user_report_name:"" }}.zip">Download all reports(Zipped version) &raquo;</a>
     &nbsp;&nbsp;&nbsp;

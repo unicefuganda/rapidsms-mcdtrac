@@ -10,6 +10,10 @@ from rapidsms.models import Contact
 from django.db.models import Count, Max, Min
 from uganda_common.utils import *
 from rapidsms_httprouter.models import Message
+from django.conf import settings
+import os
+import datetime
+import dateutil
 try:
     from collections import OrderedDict
 except ImportError:
@@ -92,6 +96,157 @@ def dictfetchall(cursor):
         OrderedDict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
+def generate_fpath(start_date=None, end_date=None, subdir='uganda', prefix='', suffix=''):
+    """
+    generate the path to the excel files.
+    start_date and end_date must be date objects
+    """
+    custom_range = False
+
+    if not start_date:
+        quarter_months = ['01', '04', '07', '10']
+        start_date = dateutil.parser.parse(
+            str(datetime.date.today().year) + '-' +
+            str(quarter_months[(datetime.date.today().month - 1) // 3]) + '-' +
+            '01'
+        ).date()
+    else:
+        custom_range = True
+
+    if not end_date:
+        end_date = datetime.date.today()
+    else:
+        custom_range= True
+
+    q_str = 'Q' + str((start_date.month - 1) // 3 + 1)
+    y_str = str(start_date.year)
+
+    if custom_range:
+        xls_fname = '{2}fhd_stats_{0}_{1}{3}.xlsx'.format(
+            start_date.strftime('%F'),
+            end_date.strftime('%F'),
+            prefix.lower(),
+            suffix.lower())
+    else:
+        xls_fname = '{2}fhd_stats-{0}_{1}{3}.xlsx'.format(
+            y_str,
+            q_str,
+            prefix.lower(),
+            suffix.lower())
+
+    xls_fpath = os.path.join(
+        settings.MTRACK_ROOT,
+        XLS_DIR,
+        '{0}/{1}'.format(subdir.lower(), y_str),
+        xls_fname
+    )
+    return os.path.abspath(xls_fpath)
+
+def generate_sql(sub_level=False, location_id=None):
+    """
+    generate SQL used to populate excel exports as follows:
+
+    if sub_level = False:
+        generate the strings suitable for a global level worksheets
+    else:
+        generate the sql suitable for a particular location specified
+        as the <location_id> option. Raise Exception if no <location_id>
+    """
+    if sub_level:
+        if not (location_id and isinstance(location_id, (int, long))):
+            raise Exception("If you want a district give me a location_id")
+        else:
+            grp_sql_title = 'SELECT f.facility AS "Facility"'
+            sql_id = 'l.id = {0}'.format(int(location_id))
+            grp_sql_name = 'f.facility'
+    else:
+        grp_sql_title = 'SELECT l.name AS "District"'
+        sql_id = """l.id in (SELECT "locations_location"."id"
+            FROM "locations_location"
+            WHERE ("locations_location"."lft" <= 15257
+                   AND "locations_location"."lft" >= 2
+                   AND "locations_location"."tree_id" = 1
+                   AND "locations_location"."type_id" = E'district'))"""
+        grp_sql_name = 'l.name'
+
+    grouped_sql = """{0},
+               COUNT(f.dpt_male) AS "Entries",
+               SUM(dpt_male) AS "DPT (M)",
+               SUM(dpt_female) AS "DPT (F)",
+               SUM(vacm_male) AS "Measles (M)",
+               SUM(vacm_female) AS "Measles (F)",
+               SUM(vita_male1) AS "Vitamin A Males (6-11m)",
+               SUM(vita_female1) AS "Vitamin A Females (6-11m)",
+               SUM(vita_male2) AS "Vitamin A Males (12-59m)",
+               SUM(vita_female2) AS "Vitamin A Females (12-59m)",
+               SUM(worm_male) AS "Deworming (M)",
+               SUM(worm_female) AS "Deworming (F)",
+               SUM(redm_number) AS "MUAC in Red Zone",
+               SUM(tet_dose2) AS "Tetanus dose2",
+               SUM(tet_dose3) AS "Tetanus dose3",
+               SUM(tet_dose4) AS "Tetanus dose4",
+               SUM(tet_dose5) AS "Tetanus dose5",
+               SUM(anc_number) AS "Four or more ANC visits",
+               SUM(eid_male) AS "HIV Children < 1year (M)",
+               SUM(eid_female) AS "HIV Children < 1year (F)",
+               SUM(breg_male) AS "Birth Registration (M)",
+               SUM(breg_female) AS "Birth Registration (F)",
+               SUM(expected_pows) AS "Expected POWs",
+               SUM(reached_pows) AS "Reached POWs"
+        FROM fhd_stats_mview f,
+             locations_location l
+        WHERE f.has_errors = FALSE
+            AND f.created >= %s
+            AND f.created <= %s
+            AND l.lft <= f.lft
+            AND l.rght >= f.rght
+            AND {1}
+        GROUP BY l.lft,
+                 l.id,
+                 {2},
+                 l.rght""".format(grp_sql_title, sql_id, grp_sql_name)
+
+    individual_sql = """SELECT f.submission_id,
+               f.created::date AS "Date",
+               l.name AS district,
+               f.facility AS facility,
+            (SELECT ll.name
+             FROM locations_location ll
+             WHERE f.reporting_location_id = ll.id) AS "reporting location",
+               f.reporting_name AS reporter,
+               f.has_errors,
+               f.dpt_male AS "DPT (M)",
+               f.dpt_female AS "DPT (F)",
+               f.vacm_male AS "Measles (M)",
+               f.vacm_female AS "Measles (F)",
+               f.vita_male1 AS "Vitamin A Males (6-11m)" ,
+               f.vita_female1 AS "Vitamin A Females (6-11m)",
+               f.vita_male2 AS "Vitamin A Males (12-59m)",
+               f.vita_female2 AS "Vitamin A Females (12-59m)",
+               f.worm_male AS "Deworming (M)",
+               f.worm_female AS "Deworming (F)",
+               f.redm_number AS "MUAC in Red Zone",
+               f.tet_dose2 AS "Tetanus dose2",
+               f.tet_dose3 AS "Tetanus dose3",
+               f.tet_dose4 AS "Tetanus dose4",
+               f.tet_dose5 AS "Tetanus dose5",
+               f.anc_number AS "Four or more ANC visits",
+               f.eid_male AS "HIV Children < 1year (M)",
+               f.eid_female AS "HIV Children < 1year (F)",
+               f.breg_male AS "Birth Registration (M)",
+               f.breg_female AS "Birth Registration (F)",
+               f.expected_pows AS "Expected POWs",
+               f.reached_pows AS "Reached POWs"
+        FROM fhd_stats_mview f ,
+             locations_location l
+        WHERE f.created >= %s
+            AND f.created <= %s
+            AND l.lft <= f.lft
+            AND l.rght >= f.rght
+            AND {0}""".format(sql_id)
+
+    return (grouped_sql, individual_sql)
+
 
 def total_facilities(location, count=True):
     """
