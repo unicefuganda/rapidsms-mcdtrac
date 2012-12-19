@@ -272,7 +272,7 @@ class Command(BaseCommand):
                 suffix.lower())
 
         xls_fpath = os.path.join(
-            settings.MTRACK_ROOT,
+            os.path.split(settings.MTRACK_ROOT)[0],
             XLS_DIR,
             '{0}/{1}'.format(subdir.lower(), y_str),
             xls_fname
