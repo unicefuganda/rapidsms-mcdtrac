@@ -23,10 +23,15 @@ class FHDMixin(object):
     Mixins for Column objects bellow for similar functionality.
 
     """
-    def materialized_attribute_by_location(self, report, keyword, single_week=False):
+    def materialized_attribute_by_location(self, report, keyword, fx='SUM', single_week=False):
         start_date = report.start_date
         end_date = report.end_date
         cursor = connection.cursor()
+        if fx == 'COUNT':
+            distinct = 'DISTINCT'
+        else:
+            distinct = ''
+
         if single_week:
             start_date = end_date - datetime.timedelta(7)
 
@@ -41,7 +46,7 @@ class FHDMixin(object):
                     report.location.get_children()[0].pk
             )
 
-        sql = """SELECT SUM("{0}") AS value,
+        sql = """SELECT {0}({1} "{2}") AS value,
        l.lft,
        l.id AS location_id,
        l.name AS location_name,
@@ -53,11 +58,11 @@ WHERE f.has_errors = FALSE
     AND f.created <= %s
     AND l.lft <= f.lft
     AND l.rght >= f.rght
-    AND {1}
+    AND {3}
 GROUP BY l.lft,
          l.id,
          l.name,
-         l.rght""".format(keyword, location_children_where)
+         l.rght""".format(fx, distinct, keyword, location_children_where)
         cursor.execute(
             sql, [start_date, end_date])
         rows = dictfetchall(cursor)
@@ -157,14 +162,21 @@ class FHDReportMaterializedCol(Column, FHDMixin):
     Pick a single value for a column in the fhd_stats_mview table
     """
 
-    def __init__(self, keyword, location=None, extra_filters=None):
+    def __init__(self, keyword, fx=None, location=None, extra_filters=None):
         if type(keyword) in [list, tuple]:
             keyword = keyword[0]
         self.keyword = str(keyword).replace('"', '')
         self.extra_filters = extra_filters
+        if fx and fx.upper() in ('SUM', 'COUNT'):
+            self.fx = fx.upper()
+        else:
+            self.fx = None
 
     def add_to_report(self, report, key, dictionary):
-        val = self.materialized_attribute_by_location(report, self.keyword)
+        if self.fx:
+            val = self.materialized_attribute_by_location(report, self.keyword, self.fx)
+        else:
+            val = self.materialized_attribute_by_location(report, self.keyword)
         reorganize_location(key, val, dictionary)
 
 class FHDReportBase(Report):
@@ -216,6 +228,7 @@ class FHDReport(FHDReportBase):
     breg_female = FHDReportColumn(['breg_female'])
 
 class FHDMaterializedReport(FHDReportBase):
+    entries = FHDReportMaterializedCol('xformreportsubmission_id', 'COUNT')
     dpt_male = FHDReportMaterializedCol('dpt_male')
     dpt_female = FHDReportMaterializedCol('dpt_female')
     vacm_male = FHDReportMaterializedCol('vacm_male')

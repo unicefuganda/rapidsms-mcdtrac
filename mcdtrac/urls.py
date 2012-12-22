@@ -41,6 +41,7 @@ urlpatterns = patterns('',
         ],
         'columns':[
             #('', False, '', None),
+            ('', False, 'entries', None),
             ('M', False, 'dpt_male', None),
             ('F', False, 'dpt_female', None),
             ('M', False, 'vacm_male', None),
