@@ -129,7 +129,7 @@ class Command(BaseCommand):
             grp_sql_name = 'l.name'
 
         grouped_sql = """{0},
-                   COUNT(f.dpt_male) AS "Entries",
+                   COUNT(DISTINCT xformreportsubmission_id) AS "Entries",
                    SUM(dpt_male) AS "DPT (M)",
                    SUM(dpt_female) AS "DPT (F)",
                    SUM(vacm_male) AS "Measles (M)",
