@@ -15,7 +15,7 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         db.execute('DROP VIEW IF EXISTS fhd_stats_view')
         db.execute('DROP TABLE IF EXISTS fhd_stats_mview')
-        # run_file('0005_add_fhd_stats_views.sql')
+        run_file('0006_fix_views.sql')
 
     def backwards(self, orm):
         db.execute('DROP TABLE IF EXISTS fhd_stats_mview')

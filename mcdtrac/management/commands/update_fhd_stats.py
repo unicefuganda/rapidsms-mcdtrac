@@ -14,11 +14,13 @@ class Command(BaseCommand):
         insert_sql="""INSERT INTO fhd_stats_mview
 SELECT f.value_id,
        f.submission_id,
+       f.xformreportsubmission_id,
        f.created,
        f.has_errors,
        f.reporting_name,
        f.phone,
        f.facility,
+       f.facility_id,
        f.lft,
        f.reporting_location_id,
        f.rght,
