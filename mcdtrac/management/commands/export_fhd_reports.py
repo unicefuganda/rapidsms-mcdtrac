@@ -332,7 +332,7 @@ class Command(BaseCommand):
             grouped_sql, individual_sql = self.generate_sql(
                                             sub_level=True,
                                             location_id = fhd_dist['id'])
-            self.stdout.write(':: district entries for {0}\n'.format(
+            self.stdout.write(':: facility entries for {0}\n'.format(
                                 fhd_dist['district']))
             self.populate_worksheet(
                 ws=wb.get_active_sheet(),
