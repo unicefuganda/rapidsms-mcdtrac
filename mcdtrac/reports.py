@@ -42,7 +42,7 @@ class FHDMixin(object):
                 ))
             )
         else:
-            location_children_where = 'l.id in {0}'.format(
+            location_children_where = 'l.id = {0}'.format(
                     report.location.get_children()[0].pk
             )
 
