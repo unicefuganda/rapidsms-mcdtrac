@@ -1,22 +1,11 @@
-from django.conf import settings
-from django.db.models import Count, Sum, Q
+from django.db.models import Sum
 from django.db import connection, transaction
 from generic.reports import Column, Report
-from generic.utils import flatten_list
 from rapidsms.contrib.locations.models import Location
-from rapidsms_httprouter.models import Message
-from script.models import Script
-from rapidsms_xforms.models import XFormSubmissionValue, XForm, XFormSubmission
-from uganda_common.reports import XFormSubmissionColumn, XFormAttributeColumn, PollNumericResultsColumn, PollCategoryResultsColumn, LocationReport, QuotientColumn, InverseQuotientColumn
-from uganda_common.utils import total_submissions, reorganize_location, total_attribute_value, previous_calendar_month
-from uganda_common.utils import reorganize_dictionary
-from poll.models import Response, Poll
-from .utils import previous_calendar_week, get_location_for_user, dictfetchall
+from rapidsms_xforms.models import XFormSubmissionValue
+from uganda_common.utils import  reorganize_location
+from .utils import get_location_for_user, dictfetchall
 import datetime
-from django.db.models.sql.constants import *
-
-from generic.reporting.views import ReportView
-from uganda_common.views import XFormReport
 
 class FHDMixin(object):
     """
