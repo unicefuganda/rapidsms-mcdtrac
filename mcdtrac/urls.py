@@ -1,8 +1,8 @@
 from django.conf.urls.defaults import *
-#try:
-#    from mtrack.decorators import login_required
-#except ImportError:
-from django.contrib.auth.decorators import login_required
+try:
+    from mtrack.decorators import login_required
+except ImportError:
+    from django.contrib.auth.decorators import login_required
 from generic.views import *
 from .utils import *
 from .views import view_submissions, mcd_dashboard, mcdtrac_xforms, submissions_as_csv
