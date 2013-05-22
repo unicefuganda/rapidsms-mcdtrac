@@ -1,16 +1,13 @@
 from django.conf.urls.defaults import *
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
+try:
+    from mtrack.decorators import login_required
+except ImportError:
+    from django.contrib.auth.decorators import login_required
 from generic.views import *
-from generic.sorters import *
-from contact.forms import *
-from contact.utils import get_messages
-from healthmodels.models.HealthProvider import HealthProviderBase
 from .utils import *
 from .views import view_submissions, mcd_dashboard, mcdtrac_xforms, submissions_as_csv
-from .sorters import LatestSubmissionSorter
 from django.views.generic.simple import direct_to_template
-from .reports import FHDReport, FHDMaterializedReport
+from .reports import FHDMaterializedReport
 
 urlpatterns = patterns('',
     url(r'^mcdtrac/demo$', login_required(mcd_dashboard), name='mcds'),
