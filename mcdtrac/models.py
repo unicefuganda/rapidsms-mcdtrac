@@ -6,9 +6,7 @@ from rapidsms_xforms.models import XFormReport, XFormReportSubmission
 from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
-from .utils import last_reporting_period
-
-XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+from .utils import last_reporting_period, OLD_XFORMS, XFORMS
 
 class PoW(models.Model):
     name = models.CharField(max_length=255)
@@ -147,10 +145,15 @@ def fhd_summary_constraint(xform, submission, health_provider):
 
 def fhd_xform_handler(sender, **kwargs):
     xform = kwargs['xform']
-    if not xform.keyword in XFORMS:
+    if not xform.keyword in XFORMS + OLD_XFORMS:
         return
     submission = kwargs['submission']
     if submission.has_errors:
+        return
+    if xform.keyword in OLD_XFORMS:
+        submission.response = "Hello. You are using the old FHD form. Please contact your DHT for the updated FHD forms. Thanks."
+        submission.has_errors = True
+        submission.save()
         return
     # TODO: check validity
     kwargs.setdefault('message', None)

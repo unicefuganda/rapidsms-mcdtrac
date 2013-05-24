@@ -21,9 +21,22 @@ except ImportError:
 
 try:
     if not XFORMS:
-        XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+        XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'breg', 'pow'])
 except NameError:
-    XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+    XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'breg', 'pow'])
+
+try:
+    if not OLD_XFORMS:
+        OLD_XFORMS = getattr(settings, 'MCDTRAC_EXPIRED_KEYWORDS', ['worm', 'redm', 'tet', 'anc', 'eid', 'sum', 'summary'])
+except NameError:
+    OLD_XFORMS = getattr(settings, 'MCDTRAC_EXPIRED_KEYWORDS', ['worm', 'redm', 'tet', 'anc', 'eid', 'sum', 'summary'])
+
+# ensure XFORMS doens't have what's in OLD_XFORMS
+for x in OLD_XFORMS:
+    try:
+        XFORMS.remove(x)
+    except:
+        pass
 
 XLS_DIR = getattr(settings, 'FHD_XLS_DIRECTORY', 'rapidsms_mcdtrac/mcdtrac/static/spreadsheets/')
 
