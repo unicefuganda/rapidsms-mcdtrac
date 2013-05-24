@@ -91,7 +91,7 @@ def fhd_pow_constraint(xform, submission, health_provider):
     try:
         district=Location.objects.get(type='district', name__iexact=submission.eav.pow_district)
     except:
-        submission.response = 'You are attempting to report for district {0} which does not exist.'.format(submission.eav.pow_district)
+        submission.response = 'You are attempting to report for district "{0}" which does not exist.'.format(submission.eav.pow_district)
         submission.has_errors = True
         submission.save()
         return
@@ -103,6 +103,7 @@ def fhd_pow_constraint(xform, submission, health_provider):
     ## look for any report_submissions open for this pow by this health center (there should be at most one)
     rs = XFormReportSubmission.objects.filter(
                                 status='open',
+                                start_date=last_reporting_period(period=0)[0],
                                 submissions__xform__keyword='pow',
                                 submissions__eav_values__value_text=place_of_worship.name,
                                 submissions__connection__contact__healthproviderbase__healthprovider__facility=health_provider.facility
@@ -142,26 +143,6 @@ def fhd_pow_constraint(xform, submission, health_provider):
     report_submission.submissions.add(submission)
     report_submission.save()
 
-def fhd_summary_constraint(xform, submission, health_provider):
-    """
-    handle summmary xform sent by in-charge
-
-    This constraint is stored in XFormReports.constraints[] (as the first item)
-    and is used to signify the end of all reports from this health facility
-    """
-    if (not xform.keyword in ['sum', 'summary']) or submission.has_errors:
-        return
-    # TODO: probably add basic checking for PINs.
-    # TODO: rewrite this as a models.F() single step...
-    for place_of_worship in PoW.objects.filter(served_by=health_provider.facility):
-        for scratch in ReportsInProgress.objects.filter(place_of_worship=place_of_worship, state__endswith='editing'):
-            scratch.xform_report.status = 'closed'
-            scratch.xform_report.save()
-            scratch.state = 'closed'
-            scratch.save()
-    submission.response = "All POW reports for facility {0} have been marked as closed.".format(health_provider.facility)
-    submission.save()
-
 ##
 ## Listner to django signal when xforms are received
 ##
@@ -196,7 +177,7 @@ def fhd_xform_handler(sender, **kwargs):
             submission.save()
         return
     ## 1.0 -> check if there's an open report (pow was sent before)
-    if not xform.keyword in ['pow', 'sum', 'summary']:
+    if not xform.keyword in ['pow']:
         try:
             report_in_progress = ReportsInProgress.objects.get(provider=health_provider, state='actively_editing')
         except ReportsInProgress.DoesNotExist:
@@ -228,14 +209,13 @@ def fhd_xform_handler(sender, **kwargs):
         return
     ## 3. -> add xforms to xformreport
     # append to the report
-    if not xform.keyword in ['pow', 'sum', 'summary']:
+    if not xform.keyword in ['pow']:
         report_in_progress.xform_report.submissions.add(submission)
         report_in_progress.xform_report.save()  # i may not need this
         submission.save()
     else:
-        ## 4. -> process constraints from the DB (pow handler and sum handler)
-        constraints = { 'fhd_pow_constraint': fhd_pow_constraint,
-                        'fhd_summary_constraint': fhd_summary_constraint}
+        ## 4. -> process constraints from the DB (pow handler)
+        constraints = { 'fhd_pow_constraint': fhd_pow_constraint}
         for c in XFormReport.objects.get(name='FHD').constraints:
             # WARNING: I'm (intentionally) not catching KeyError exceptions so all constraints must exist
             constraints[c](xform, submission, health_provider)
