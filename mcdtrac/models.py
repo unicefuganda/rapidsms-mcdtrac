@@ -8,6 +8,7 @@ from rapidsms_xforms.models import xform_received
 import datetime
 from django.conf import settings
 from .utils import last_reporting_period, OLD_XFORMS, XFORMS
+import re
 
 class PoW(models.Model):
     POW_CHOICES = (
@@ -84,8 +85,21 @@ def fhd_pow_constraint(xform, submission, health_provider):
     if (xform.keyword != 'pow') or submission.has_errors:
         return
     xform_report = XFormReport.objects.get(name='FHD')
+    ## sanitize the pow code and ensure we have a correct district
+    pow_code = re.sub(r'\s*0?([\d])\s*',r'0\1', str(submission.eav.pow_code))
+
+    try:
+        district=Location.objects.get(type='district', name__iexact=submission.eav.pow_district)
+    except:
+        submission.response = 'You are attempting to report for district {0} which does not exist.'.format(submission.eav.pow_district)
+        submission.has_errors = True
+        submission.save()
+        return
+
     place_of_worship, new_pow = PoW.objects.get_or_create(name=submission.eav.pow_name,
-                                                 served_by=health_provider.facility)
+                                                district=district,
+                                                code=pow_code,
+                                                served_by=health_provider.facility)
     ## look for any report_submissions open for this pow by this health center (there should be at most one)
     rs = XFormReportSubmission.objects.filter(
                                 status='open',
