@@ -10,9 +10,10 @@ from rapidsms_xforms.models import XForm, XFormSubmission
 from django.core.paginator import Paginator
 from generic.views import generic
 from .forms import XFormsForm
+from .utils import XFORMS
 from uganda_common.utils import get_location_for_user, get_xform_dates, total_attribute_value
 
-mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+mcd_keywords = XFORMS
 
 def save_upload(uploaded, filename, raw_data):
     '''
