@@ -1,6 +1,7 @@
 from django.db import models
 from healthmodels.models.HealthFacility import HealthFacility
 from healthmodels.models.HealthProvider import HealthProvider
+from rapidsms.contrib.locations.models import Location
 from rapidsms_xforms.models import XForm, XFormSubmission
 from rapidsms_xforms.models import XFormReport, XFormReportSubmission
 from rapidsms_xforms.models import xform_received
@@ -9,8 +10,16 @@ from django.conf import settings
 from .utils import last_reporting_period, OLD_XFORMS, XFORMS
 
 class PoW(models.Model):
+    POW_CHOICES = (
+        ('01', 'Catholic'),
+        ('02', 'Church Of Uganda'),
+        ('03', 'Moslem'),
+        ('04', 'Other')
+    )
     name = models.CharField(max_length=255)
+    code = models.CharField(max_length=2, choices=POW_CHOICES)
     served_by = models.ForeignKey(HealthFacility)
+    district = models.ForeignKey(Location, blank=True, null=True)
 
     def __unicode__(self):
         return '%s' % self.name
