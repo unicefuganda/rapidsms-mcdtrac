@@ -2,8 +2,9 @@ from django.conf import settings
 from django import forms
 from rapidsms_xforms.models import XForm
 from generic.forms import ActionForm, FilterForm
+from .utils import XFORMS
 
-mcd_keywords = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'worm', 'redm', 'tet', 'anc', 'eid', 'breg', 'pow', 'sum', 'summary'])
+mcd_keywords = XFORMS
 
 class XFormsForm(FilterForm):
     xform_id = forms.ChoiceField(label="XForm", choices=(('', '-----'),) + tuple([(int(xf.pk),
