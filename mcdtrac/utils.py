@@ -21,9 +21,9 @@ except ImportError:
 
 try:
     if not XFORMS:
-        XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'breg', 'pow'])
+        XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'breg', 'pow', 'ryg', 'pcv', 'tetn', 'npet', 'ancp', 'heid', 'bpbs', 'dorm'])
 except NameError:
-    XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'breg', 'pow'])
+    XFORMS = getattr(settings, 'MCDTRAC_XFORMS_KEYWORDS', ['dpt', 'vacm', 'vita', 'breg', 'pow', 'ryg', 'pcv', 'tetn', 'npet', 'ancp', 'heid', 'bpbs', 'dorm'])
 
 try:
     if not OLD_XFORMS:
