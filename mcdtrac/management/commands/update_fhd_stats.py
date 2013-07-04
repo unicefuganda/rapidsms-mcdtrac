@@ -75,7 +75,17 @@ SELECT f.value_id,
        f.bpbs_bpm,
        f.bpbs_bpf,
        f.bpbs_bsm,
-       f.bpbs_bsf
+       f.bpbs_bsf,
+       f.worm_male,
+       f.worm_female,
+       f.redm_number,
+       f.tet_dose2,
+       f.tet_dose3,
+       f.tet_dose4,
+       f.tet_dose5,
+       f.anc_number,
+       f.eid_male,
+       f.eid_female
 FROM fhd_stats_view f
 WHERE f.pow_district_id IS NOT NULL
   OR f.pow_district_name IS NOT NULL
@@ -128,7 +138,17 @@ WHERE f.pow_district_id IS NOT NULL
   OR f.bpbs_bpm IS NOT NULL
   OR f.bpbs_bpf IS NOT NULL
   OR f.bpbs_bsm IS NOT NULL
-  OR f.bpbs_bsf IS NOT NULL"""
+  OR f.bpbs_bsf IS NOT NULL
+  OR f.worm_male IS NOT NULL
+  OR f.worm_female IS NOT NULL
+  OR f.redm_number IS NOT NULL
+  OR f.tet_dose2 IS NOT NULL
+  OR f.tet_dose3 IS NOT NULL
+  OR f.tet_dose4 IS NOT NULL
+  OR f.tet_dose5 IS NOT NULL
+  OR f.anc_number IS NOT NULL
+  OR f.eid_male IS NOT NULL
+  OR f.eid_female IS NOT NULL"""
         verbose = False
         quiet = False
         if 'verbosity' in options:

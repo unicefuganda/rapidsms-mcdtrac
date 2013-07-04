@@ -117,6 +117,7 @@ class Command(BaseCommand):
                 grp_sql_title = 'SELECT f.facility AS "Facility"'
                 sql_id = 'l.id = {0}'.format(int(location_id))
                 grp_sql_name = 'f.facility'
+                grp_extra_cols = ''
         else:
             grp_sql_title = 'SELECT l.name AS "District"'
             sql_id = """l.id in (SELECT "locations_location"."id"
@@ -126,9 +127,21 @@ class Command(BaseCommand):
                        AND "locations_location"."tree_id" = 1
                        AND "locations_location"."type_id" = 'district'))"""
             grp_sql_name = 'l.name'
+            grp_extra_cols = """(SELECT "locations_location"."name"
+            FROM "locations_location"
+            WHERE "locations_location"."rght" > l.rght
+                   AND "locations_location"."lft" < l.lft
+                   AND "locations_location"."tree_id" = 1
+                   AND "locations_location"."level" = 1
+            ) AS "Region",
+            '' AS "Expected POW Outreaches",
+            COUNT(pow_name) AS "POW Outreach Data",
+            '' AS "POW reporting rates",
+            '' AS "Responsible DPO","""
 
         grouped_sql = """{0},
                 COUNT(DISTINCT xformreportsubmission_id) AS "Entries",
+                {3}
                 SUM(dpt_male) AS "DPT (M)",
                 SUM(dpt_female) AS "DPT (F)",
                 SUM(vacm_male) AS "Measles (M)",
@@ -188,7 +201,7 @@ class Command(BaseCommand):
             GROUP BY l.lft,
                      l.id,
                      {2},
-                     l.rght""".format(grp_sql_title, sql_id, grp_sql_name)
+                     l.rght""".format(grp_sql_title, sql_id, grp_sql_name, grp_extra_cols)
 
         individual_sql = """SELECT f.submission_id,
                    f.created::date AS "Date",
@@ -247,7 +260,17 @@ class Command(BaseCommand):
                     f.bpbs_bpm AS "Blood pressure (M)",
                     f.bpbs_bpf AS "Blood pressure (F)",
                     f.bpbs_bsm AS "Blood sugar (M)",
-                    f.bpbs_bsf AS "Blood sugar (F)"
+                    f.bpbs_bsf AS "Blood sugar (F)",
+                    f.worm_male AS "** WORM (M)",
+                    f.worm_female AS "** WORM (F)",
+                    f.redm_number AS "** REDM",
+                    f.tet_dose2 AS "** TET dose2",
+                    f.tet_dose3 AS "** TET dose3",
+                    f.tet_dose4 AS "** TET dose4",
+                    f.tet_dose5 AS "** TET dose5",
+                    f.anc_number AS "** ANC >4 ",
+                    f.eid_male AS "** EID (M)",
+                    f.eid_female AS "** EID (F)"
             FROM fhd_stats_mview f ,
                  locations_location l
             WHERE f.created >= %s
@@ -267,6 +290,10 @@ class Command(BaseCommand):
         ws.title = title
         ws.show_gridlines = False  # doesn't seem to work
         sql_str = sql_list.pop(0)
+
+        if self.debug_fhd:
+            self.stdout.write('DEBUG::SQL:\n{0}\n\n\tstart:{1}\tend:{2}\n\n'.format(sql_str ,sql_list[0], sql_list[1]))
+
 
         cursor.execute(sql_str, sql_list)
         headers = [col[0] for col in cursor.description]

@@ -469,8 +469,87 @@ SELECT "rapidsms_xforms_xformsubmissionvalue"."value_ptr_id" AS value_id,
        (SELECT "eav_attribute"."id"
         FROM "eav_attribute"
         WHERE "eav_attribute"."slug" = 'bpbs_bsf')
-     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS bpbs_bsf
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS bpbs_bsf,
 
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'worm_male')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS worm_male,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'worm_female')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS worm_female,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'redm_number')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS redm_number,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'tet_dose2')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS tet_dose2,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'tet_dose3')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS tet_dose3,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'tet_dose4')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS tet_dose4,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'tet_dose5')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS tet_dose5,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'anc_number')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS anc_number,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'eid_male')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS eid_male,
+
+  (SELECT eav_value.value_int
+   FROM "eav_value"
+   WHERE eav_value.attribute_id IN
+       (SELECT "eav_attribute"."id"
+        FROM "eav_attribute"
+        WHERE "eav_attribute"."slug" = 'eid_female')
+     AND eav_value.id = rapidsms_xforms_xformsubmissionvalue.value_ptr_id) AS eid_female
 FROM "rapidsms_xforms_xformsubmissionvalue"
 INNER JOIN "rapidsms_xforms_xformsubmission" ON "rapidsms_xforms_xformsubmissionvalue"."submission_id" = "rapidsms_xforms_xformsubmission"."id"
 INNER JOIN "rapidsms_connection" ON "rapidsms_xforms_xformsubmission"."connection_id" = "rapidsms_connection"."id"
@@ -544,7 +623,17 @@ SELECT f.value_id,
        f.bpbs_bpm,
        f.bpbs_bpf,
        f.bpbs_bsm,
-       f.bpbs_bsf
+       f.bpbs_bsf,
+       f.worm_male,
+       f.worm_female,
+       f.redm_number,
+       f.tet_dose2,
+       f.tet_dose3,
+       f.tet_dose4,
+       f.tet_dose5,
+       f.anc_number,
+       f.eid_male,
+       f.eid_female
 FROM fhd_stats_view f
 WHERE f.pow_district_id IS NOT NULL
   OR f.pow_district_name IS NOT NULL
@@ -597,7 +686,17 @@ WHERE f.pow_district_id IS NOT NULL
   OR f.bpbs_bpm IS NOT NULL
   OR f.bpbs_bpf IS NOT NULL
   OR f.bpbs_bsm IS NOT NULL
-  OR f.bpbs_bsf IS NOT NULL;
+  OR f.bpbs_bsf IS NOT NULL
+  OR f.worm_male IS NOT NULL
+  OR f.worm_female IS NOT NULL
+  OR f.redm_number IS NOT NULL
+  OR f.tet_dose2 IS NOT NULL
+  OR f.tet_dose3 IS NOT NULL
+  OR f.tet_dose4 IS NOT NULL
+  OR f.tet_dose5 IS NOT NULL
+  OR f.anc_number IS NOT NULL
+  OR f.eid_male IS NOT NULL
+  OR f.eid_female IS NOT NULL;
 ---
 --- INDEXES
 ---
