@@ -1,6 +1,7 @@
 {% extends "generic/partials/partial_header.html" %}
 
 {% block tablehead %}
+{% comment %}
     <tr>
         <th rowspan="2">
             &nbsp;
@@ -18,6 +19,7 @@
             Birth Register
         </th>
     </tr>
+{% endcomment %}
     <tr>
         {% for name, colspan, href in top_columns %}
             <th colspan="{{ colspan }}" class="stats_title">
