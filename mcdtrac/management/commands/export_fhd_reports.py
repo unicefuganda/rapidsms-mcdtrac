@@ -63,9 +63,8 @@ class Command(BaseCommand):
                    l.rght
             FROM fhd_stats_mview f ,
                  locations_location l
-            WHERE f.has_errors = FALSE
-                AND l.lft <= f.lft
-                AND l.rght >= f.rght
+            WHERE f.lft <= l.rght
+                AND f.lft >= l.lft
                 AND l.id IN
                     (SELECT "locations_location"."id"
                      FROM "locations_location"
@@ -183,8 +182,8 @@ class Command(BaseCommand):
             WHERE f.has_errors = FALSE
                 AND f.created >= %s
                 AND f.created <= %s
-                AND l.lft <= f.lft
-                AND l.rght >= f.rght
+                AND f.lft <= l.rght
+                AND f.lft >= l.lft
                 AND {1}
             GROUP BY l.lft,
                      l.id,
@@ -253,8 +252,8 @@ class Command(BaseCommand):
                  locations_location l
             WHERE f.created >= %s
                 AND f.created <= %s
-                AND l.lft <= f.lft
-                AND l.rght >= f.rght
+                AND f.lft <= l.rght
+                AND f.lft >= l.lft
                 AND {0}""".format(sql_id)
 
         return (grouped_sql, individual_sql)
