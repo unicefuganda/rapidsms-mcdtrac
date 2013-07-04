@@ -96,7 +96,7 @@ class Command(BaseCommand):
             return {
                 'lft': d.lft,
                 'id': d.id,
-                'name': d.name,
+                'district': d.name,
                 'rght': d.rght
             }
 
