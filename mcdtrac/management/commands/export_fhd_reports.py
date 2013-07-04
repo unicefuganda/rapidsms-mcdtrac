@@ -204,12 +204,11 @@ class Command(BaseCommand):
                      l.rght""".format(grp_sql_title, sql_id, grp_sql_name, grp_extra_cols)
 
         individual_sql = """SELECT f.submission_id,
-                   f.created::date AS "Date",
-                   l.name AS district,
-                   f.facility AS facility,
-                (SELECT ll.name
-                 FROM locations_location ll
-                 WHERE f.reporting_location_id = ll.id) AS "reporting location",
+                    f.created::date AS "Date",
+                    l.name AS district,
+                    f.facility AS "Name of Facility",
+                    f.reporting_name AS "Name of Reporter",
+                    f.phone AS "Phone Number of Reporter",
                     f.pow_district_name AS "FHD POW District",
                     f.pow_code AS "FHD POW Code",
                     f.pow_name AS "FHD POW Name",
