@@ -11,15 +11,15 @@ class Migration(DataMigration):
         from mcdtrac.utils import OLD_XFORMS
         import dateutil
 
-        orm.mcdtrac.ReportsInProgress.objects.filter(
+        orm['mcdtrac.ReportsInProgress'].objects.filter(
             state__endswith='editing'
         ).update(state='closed')
 
-        orm.rapidsms_xforms.XFormReportSubmission.objects.filter(
+        orm['rapidsms_xforms.XFormReportSubmission'].objects.filter(
             status='open'
         ).update(status='closed')
 
-        orm.rapidsms_xforms.XFormSubmission.objects.filter(
+        orm['rapidsms_xforms.XFormSubmission'].objects.filter(
             has_errors=False,
             xform__keyword__in=OLD_XFORMS + ['ryg', 'pow'],
             created__lt=dateutil.parser.parse('2013-07-01')
