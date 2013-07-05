@@ -127,13 +127,7 @@ class Command(BaseCommand):
                        AND "locations_location"."tree_id" = 1
                        AND "locations_location"."type_id" = 'district'))"""
             grp_sql_name = 'l.name'
-            grp_extra_cols = """(SELECT "locations_location"."name"
-            FROM "locations_location"
-            WHERE "locations_location"."rght" > l.rght
-                   AND "locations_location"."lft" < l.lft
-                   AND "locations_location"."tree_id" = 1
-                   AND "locations_location"."level" = 1
-            ) AS "Region",
+            grp_extra_cols = """'' AS "Zonal Office",
             '' AS "Expected POW Outreaches",
             COUNT(pow_name) AS "POW Outreach Data",
             '' AS "POW reporting rates",
@@ -209,9 +203,9 @@ class Command(BaseCommand):
                     f.facility AS "Name of Facility",
                     f.reporting_name AS "Name of Reporter",
                     f.phone AS "Phone Number of Reporter",
-                    f.pow_district_name AS "FHD POW District",
-                    f.pow_code AS "FHD POW Code",
-                    f.pow_name AS "FHD POW Name",
+                    f.pow_district_name AS "POW District",
+                    f.pow_code AS "POW Code",
+                    f.pow_name AS "POW Name",
                     f.dpt_male AS "DPT (M)",
                     f.dpt_female AS "DPT (F)",
                     f.vacm_male AS "Measles (M)",
