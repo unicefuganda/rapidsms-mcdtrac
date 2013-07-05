@@ -203,6 +203,7 @@ class Command(BaseCommand):
                     f.facility AS "Name of Facility",
                     f.reporting_name AS "Name of Reporter",
                     f.phone AS "Phone Number of Reporter",
+                    f.has_errors AS "Invalid",
                     f.pow_district_name AS "POW District",
                     f.pow_code AS "POW Code",
                     f.pow_name AS "POW Name",
