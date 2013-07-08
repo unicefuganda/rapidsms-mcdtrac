@@ -129,7 +129,7 @@ class Command(BaseCommand):
             grp_sql_name = 'l.name'
             grp_extra_cols = """'' AS "Zonal Office",
             '' AS "Expected POW Outreaches",
-            COUNT(pow_name) AS "POW Outreach Data",
+            COUNT(DISTINCT pow_name) AS "POW Outreach Data",
             '' AS "POW reporting rates",
             '' AS "Responsible DPO","""
 
